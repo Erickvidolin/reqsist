@@ -6,6 +6,9 @@
     <title>Sistema de Requisição de Materiais</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Biblioteca para gerar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     
     <!-- Firebase SDK -->
     <script type="module">
@@ -29,6 +32,11 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        // Configurar para evitar redirecionamento automático
+        auth.setPersistence('session').catch((error) => {
+            console.error('Erro ao configurar persistência:', error);
+        });
+
         // Exportar para uso global
         window.firebase = {
             db,
@@ -46,6 +54,8 @@
             signOut,
             onAuthStateChanged
         };
+
+        console.log('Firebase inicializado com sucesso!');
     </script>
 
     <script>
@@ -74,6 +84,9 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .table-row:hover {
+            background-color: #f8fafc;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -97,7 +110,9 @@
                     <input type="password" id="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Digite sua senha" required>
                 </div>
                 
-                <button type="submit" class="w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-secondary transition duration-200 font-medium">Entrar</button>
+                <button type="submit" class="w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-secondary transition duration-200 font-medium">
+                    Entrar
+                </button>
             </form>
             
             <div class="mt-6 text-center text-sm text-gray-500">
@@ -138,6 +153,11 @@
                                 <i class="fas fa-tasks mr-2"></i> Atendimento
                             </a>
                         </li>
+                        <li>
+                            <a href="#" id="nav-rastreabilidade" class="nav-link text-white py-3 px-6 block font-medium">
+                                <i class="fas fa-search mr-2"></i> Rastreabilidade
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </nav>
@@ -162,11 +182,15 @@
                                 <select id="setor" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" required>
                                     <option value="" disabled selected>Selecione o setor</option>
                                     <option value="Administração">Administração</option>
-                                    <option value="Produção">Produção</option>
-                                    <option value="Logística">Logística</option>
-                                    <option value="TI">TI</option>
-                                    <option value="RH">RH</option>
+                                    <option value="Acabamento">Produção</option>
+                                    <option value="Qualidade">Qualidade</option>
+                                    <option value="PDI">PDI</option>
+                                    <option value="Usinagem">Usinagem</option>
                                     <option value="Financeiro">Financeiro</option>
+                                    <option value="Area limpa">Área limpa</option>
+                                    <option value="Quarentena">Quarentena</option>
+                                    <option value="Expedição">Expedição</option>
+                                    
                                 </select>
                             </div>
                             
@@ -221,6 +245,110 @@
                     </div>
                 </div>
             </div>
+
+            <!-- NOVA TELA: Rastreabilidade -->
+            <div id="rastreabilidade-screen" class="hidden fade-in">
+                <div class="bg-white rounded-xl card-shadow p-6 mb-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-800">Rastreabilidade de Requisições</h2>
+                        <div class="flex space-x-3">
+                            <button id="export-pdf-btn" class="bg-danger text-white py-2 px-4 rounded-lg hover:bg-red-700 transition duration-200 font-medium">
+                                <i class="fas fa-file-pdf mr-2"></i> Exportar PDF
+                            </button>
+                            <button id="refresh-data-btn" class="bg-primary text-white py-2 px-4 rounded-lg hover:bg-secondary transition duration-200 font-medium">
+                                <i class="fas fa-sync-alt mr-2"></i> Atualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filtros -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-2">Data Início</label>
+                            <input type="date" id="filter-data-inicio" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-2">Data Fim</label>
+                            <input type="date" id="filter-data-fim" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-2">Status</label>
+                            <select id="filter-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="todos">Todos</option>
+                                <option value="pendente">Pendente</option>
+                                <option value="aprovado">Aprovado</option>
+                                <option value="entregue">Entregue</option>
+                                <option value="negado">Negado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-2">Setor</label>
+                            <select id="filter-setor" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="todos">Todos</option>
+                                <option value="Administração">Administração</option>
+                                <option value="Produção">Produção</option>
+                                <option value="Logística">Logística</option>
+                                <option value="TI">TI</option>
+                                <option value="RH">RH</option>
+                                <option value="Financeiro">Financeiro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Estatísticas -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-blue-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-primary" id="total-requisicoes">0</div>
+                            <div class="text-sm text-gray-600">Total</div>
+                        </div>
+                        <div class="bg-yellow-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-warning" id="requisicoes-pendentes">0</div>
+                            <div class="text-sm text-gray-600">Pendentes</div>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-success" id="requisicoes-entregues">0</div>
+                            <div class="text-sm text-gray-600">Entregues</div>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-danger" id="requisicoes-negadas">0</div>
+                            <div class="text-sm text-gray-600">Negadas</div>
+                        </div>
+                    </div>
+
+                    <!-- Tabela de Rastreabilidade -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full table-auto">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requisitante</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Setor</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantidade</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tempo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rastreabilidade-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Dados serão preenchidos via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Paginação -->
+                    <div class="flex justify-between items-center mt-6">
+                        <div class="text-sm text-gray-600">
+                            Mostrando <span id="current-count">0</span> de <span id="total-count">0</span> registros
+                        </div>
+                        <div class="flex space-x-2">
+                            <button id="prev-page" class="px-3 py-1 border border-gray-300 rounded disabled:opacity-50">Anterior</button>
+                            <span id="page-info" class="px-3 py-1">Página 1</span>
+                            <button id="next-page" class="px-3 py-1 border border-gray-300 rounded disabled:opacity-50">Próxima</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -243,7 +371,11 @@
             isAdmin: false,
             requests: [],
             currentFilter: 'todos',
-            unsubscribeRequests: null
+            unsubscribeRequests: null,
+            // Novos estados para rastreabilidade
+            currentPage: 1,
+            itemsPerPage: 10,
+            filteredRequests: []
         };
 
         // Elementos da DOM
@@ -257,8 +389,10 @@
             logoutBtn: document.getElementById('logout-btn'),
             navRequisicao: document.getElementById('nav-requisicao'),
             navAtendimento: document.getElementById('nav-atendimento'),
+            navRastreabilidade: document.getElementById('nav-rastreabilidade'),
             requisicaoScreen: document.getElementById('requisicao-screen'),
             atendimentoScreen: document.getElementById('atendimento-screen'),
+            rastreabilidadeScreen: document.getElementById('rastreabilidade-screen'),
             requisicaoForm: document.getElementById('requisicao-form'),
             requisitanteInput: document.getElementById('requisitante'),
             setorSelect: document.getElementById('setor'),
@@ -270,19 +404,54 @@
             confirmationModal: document.getElementById('confirmation-modal'),
             confirmationMessage: document.getElementById('confirmation-message'),
             cancelAction: document.getElementById('cancel-action'),
-            confirmAction: document.getElementById('confirm-action')
+            confirmAction: document.getElementById('confirm-action'),
+            // Novos elementos para rastreabilidade
+            exportPdfBtn: document.getElementById('export-pdf-btn'),
+            refreshDataBtn: document.getElementById('refresh-data-btn'),
+            filterDataInicio: document.getElementById('filter-data-inicio'),
+            filterDataFim: document.getElementById('filter-data-fim'),
+            filterStatus: document.getElementById('filter-status'),
+            filterSetor: document.getElementById('filter-setor'),
+            rastreabilidadeTableBody: document.getElementById('rastreabilidade-table-body'),
+            totalRequisicoes: document.getElementById('total-requisicoes'),
+            requisicoesPendentes: document.getElementById('requisicoes-pendentes'),
+            requisicoesEntregues: document.getElementById('requisicoes-entregues'),
+            requisicoesNegadas: document.getElementById('requisicoes-negadas'),
+            currentCount: document.getElementById('current-count'),
+            totalCount: document.getElementById('total-count'),
+            pageInfo: document.getElementById('page-info'),
+            prevPage: document.getElementById('prev-page'),
+            nextPage: document.getElementById('next-page')
         };
+
+        console.log('Script carregado, elementos:', Object.keys(elements).length);
 
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
             // Verificar estado de autenticação
-            window.firebase.onAuthStateChanged(window.firebase.auth, (user) => {
+            window.firebase.onAuthStateChanged(window.firebase.auth, async (user) => {
+                console.log('onAuthStateChanged chamado, usuário:', user);
+                
                 if (user) {
+                    console.log('Usuário autenticado:', user.email);
                     state.currentUser = user;
-                    state.isAdmin = user.email === 'admin@empresa.com'; // Defina o email do admin aqui
-                    showMainScreen();
-                    setupRealtimeListener();
+                    
+                    try {
+                        // Verificar se é admin
+                        state.isAdmin = await checkIfUserIsAdmin(user);
+                        console.log('É admin?', state.isAdmin);
+                        
+                        showMainScreen();
+                        setupRealtimeListener();
+                    } catch (error) {
+                        console.error('Erro ao verificar admin:', error);
+                        // Mesmo com erro, permite login como usuário normal
+                        state.isAdmin = false;
+                        showMainScreen();
+                        setupRealtimeListener();
+                    }
                 } else {
+                    console.log('Nenhum usuário autenticado');
                     showLoginScreen();
                 }
             });
@@ -292,6 +461,7 @@
             elements.logoutBtn.addEventListener('click', handleLogout);
             elements.navRequisicao.addEventListener('click', () => showScreen('requisicao'));
             elements.navAtendimento.addEventListener('click', () => showScreen('atendimento'));
+            elements.navRastreabilidade.addEventListener('click', () => showScreen('rastreabilidade'));
             elements.requisicaoForm.addEventListener('submit', handleNewRequest);
             elements.cancelAction.addEventListener('click', hideConfirmationModal);
             
@@ -314,34 +484,25 @@
                     renderRequests();
                 });
             });
+
+            // Novos event listeners para rastreabilidade
+            elements.exportPdfBtn.addEventListener('click', exportToPDF);
+            elements.refreshDataBtn.addEventListener('click', applyFilters);
+            elements.filterDataInicio.addEventListener('change', applyFilters);
+            elements.filterDataFim.addEventListener('change', applyFilters);
+            elements.filterStatus.addEventListener('change', applyFilters);
+            elements.filterSetor.addEventListener('change', applyFilters);
+            elements.prevPage.addEventListener('click', previousPage);
+            elements.nextPage.addEventListener('click', nextPage);
+
+            // Configurar datas padrão (últimos 30 dias)
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 30);
+            
+            elements.filterDataInicio.value = startDate.toISOString().split('T')[0];
+            elements.filterDataFim.value = endDate.toISOString().split('T')[0];
         });
-
-        // Configurar listener em tempo real para as requisições
-        function setupRealtimeListener() {
-            if (state.unsubscribeRequests) {
-                state.unsubscribeRequests();
-            }
-
-            const q = window.firebase.query(
-                window.firebase.collection(window.firebase.db, "requisicoes"),
-                window.firebase.orderBy("timestamp", "desc")
-            );
-
-            state.unsubscribeRequests = window.firebase.onSnapshot(q, (querySnapshot) => {
-                state.requests = [];
-                querySnapshot.forEach((doc) => {
-                    const request = doc.data();
-                    request.id = doc.id;
-                    state.requests.push(request);
-                });
-                
-                // Atualizar as interfaces
-                if (state.isAdmin && state.currentFilter === 'atendimento') {
-                    renderRequests();
-                }
-                renderUserRequests();
-            });
-        }
 
         // Funções de manipulação de eventos
         async function handleLogin(e) {
@@ -351,10 +512,55 @@
             
             if (email && password) {
                 try {
-                    await window.firebase.signInWithEmailAndPassword(window.firebase.auth, email, password);
-                    // O onAuthStateChanged irá lidar com o redirecionamento
+                    console.log('Tentando login com:', email);
+                    
+                    // Desabilitar o botão de login para evitar múltiplos cliques
+                    const submitBtn = e.target.querySelector('button[type="submit"]');
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Entrando...';
+                    
+                    // Fazer login
+                    const userCredential = await window.firebase.signInWithEmailAndPassword(
+                        window.firebase.auth, 
+                        email, 
+                        password
+                    );
+                    
+                    console.log('Login bem-sucedido:', userCredential.user.email);
+                    
+                    // O onAuthStateChanged irá lidar com o redirecionamento automaticamente
+                    
                 } catch (error) {
-                    alert('Erro no login: ' + error.message);
+                    console.error('Erro no login:', error);
+                    
+                    // Reativar o botão
+                    const submitBtn = e.target.querySelector('button[type="submit"]');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Entrar';
+                    
+                    let errorMessage = 'Erro no login. ';
+                    
+                    switch (error.code) {
+                        case 'auth/invalid-email':
+                            errorMessage += 'Email inválido.';
+                            break;
+                        case 'auth/user-disabled':
+                            errorMessage += 'Usuário desativado.';
+                            break;
+                        case 'auth/user-not-found':
+                            errorMessage += 'Usuário não encontrado.';
+                            break;
+                        case 'auth/wrong-password':
+                            errorMessage += 'Senha incorreta.';
+                            break;
+                        case 'auth/too-many-requests':
+                            errorMessage += 'Muitas tentativas. Tente novamente mais tarde.';
+                            break;
+                        default:
+                            errorMessage += error.message;
+                    }
+                    
+                    alert(errorMessage);
                 }
             } else {
                 alert('Por favor, preencha todos os campos.');
@@ -405,6 +611,60 @@
             }
         }
 
+        // Configurar listener em tempo real para as requisições
+        function setupRealtimeListener() {
+            if (state.unsubscribeRequests) {
+                state.unsubscribeRequests();
+            }
+
+            const q = window.firebase.query(
+                window.firebase.collection(window.firebase.db, "requisicoes"),
+                window.firebase.orderBy("timestamp", "desc")
+            );
+
+            state.unsubscribeRequests = window.firebase.onSnapshot(q, (querySnapshot) => {
+                state.requests = [];
+                querySnapshot.forEach((doc) => {
+                    const request = doc.data();
+                    request.id = doc.id;
+                    state.requests.push(request);
+                });
+                
+                // Atualizar as interfaces
+                if (state.isAdmin && state.currentFilter === 'atendimento') {
+                    renderRequests();
+                }
+                renderUserRequests();
+                
+                // Atualizar rastreabilidade se estiver visível
+                if (!elements.rastreabilidadeScreen.classList.contains('hidden')) {
+                    applyFilters();
+                }
+            });
+        }
+
+        async function checkIfUserIsAdmin(user) {
+    try {
+        console.log('Verificando se usuário é admin:', user.email);
+        
+        // Lista de administradores - ADICIONE SEUS EMAILS AQUI
+        const adminEmails = [
+            'erick@ibeg.com',
+            'guilherme@ibeg.com',
+            'admin@empresa.com'  // você pode manter ou remover
+        ];
+        
+        const isAdmin = adminEmails.includes(user.email.toLowerCase());
+        console.log('Usuário é admin?', isAdmin);
+        return isAdmin;
+        
+    } catch (error) {
+        console.error('Erro ao verificar admin:', error);
+        // Em caso de erro, retorna false (não é admin)
+        return false;
+    }
+}
+
         // Funções de renderização
         function showLoginScreen() {
             elements.loginScreen.classList.remove('hidden');
@@ -414,6 +674,8 @@
         }
 
         function showMainScreen() {
+            console.log('Mostrando tela principal para:', state.currentUser.email);
+            
             elements.loginScreen.classList.add('hidden');
             elements.mainScreen.classList.remove('hidden');
             
@@ -424,10 +686,14 @@
             
             // Mostrar a tela apropriada
             if (state.isAdmin) {
+                console.log('Usuário é admin, mostrando todas as abas');
                 elements.navAtendimento.classList.remove('hidden');
+                elements.navRastreabilidade.classList.remove('hidden');
                 showScreen('atendimento');
             } else {
+                console.log('Usuário não é admin, mostrando apenas requisição');
                 elements.navAtendimento.classList.add('hidden');
+                elements.navRastreabilidade.classList.add('hidden');
                 showScreen('requisicao');
             }
         }
@@ -441,12 +707,20 @@
             if (screen === 'requisicao') {
                 elements.requisicaoScreen.classList.remove('hidden');
                 elements.atendimentoScreen.classList.add('hidden');
+                elements.rastreabilidadeScreen.classList.add('hidden');
                 elements.navRequisicao.classList.add('active', 'bg-primary', 'bg-opacity-20');
             } else if (screen === 'atendimento') {
                 elements.requisicaoScreen.classList.add('hidden');
                 elements.atendimentoScreen.classList.remove('hidden');
+                elements.rastreabilidadeScreen.classList.add('hidden');
                 elements.navAtendimento.classList.add('active', 'bg-primary', 'bg-opacity-20');
                 renderRequests();
+            } else if (screen === 'rastreabilidade') {
+                elements.requisicaoScreen.classList.add('hidden');
+                elements.atendimentoScreen.classList.add('hidden');
+                elements.rastreabilidadeScreen.classList.remove('hidden');
+                elements.navRastreabilidade.classList.add('active', 'bg-primary', 'bg-opacity-20');
+                applyFilters();
             }
         }
 
@@ -608,6 +882,165 @@
                 console.error('Erro ao atualizar requisição:', error);
                 alert('Erro ao atualizar requisição. Tente novamente.');
             }
+        }
+
+        // NOVAS FUNÇÕES PARA RASTREABILIDADE
+
+        function applyFilters() {
+            let filtered = [...state.requests];
+
+            // Filtro por data
+            if (elements.filterDataInicio.value) {
+                const startDate = new Date(elements.filterDataInicio.value);
+                filtered = filtered.filter(req => {
+                    const reqDate = new Date(req.timestamp?.toDate() || req.timestamp || req.data);
+                    return reqDate >= startDate;
+                });
+            }
+
+            if (elements.filterDataFim.value) {
+                const endDate = new Date(elements.filterDataFim.value);
+                endDate.setHours(23, 59, 59, 999);
+                filtered = filtered.filter(req => {
+                    const reqDate = new Date(req.timestamp?.toDate() || req.timestamp || req.data);
+                    return reqDate <= endDate;
+                });
+            }
+
+            // Filtro por status
+            if (elements.filterStatus.value !== 'todos') {
+                filtered = filtered.filter(req => req.status === elements.filterStatus.value);
+            }
+
+            // Filtro por setor
+            if (elements.filterSetor.value !== 'todos') {
+                filtered = filtered.filter(req => req.setor === elements.filterSetor.value);
+            }
+
+            state.filteredRequests = filtered;
+            state.currentPage = 1;
+            updateRastreabilidadeTable();
+            updateStatistics();
+        }
+
+        function updateRastreabilidadeTable() {
+            const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+            const endIndex = startIndex + state.itemsPerPage;
+            const paginatedRequests = state.filteredRequests.slice(startIndex, endIndex);
+
+            elements.rastreabilidadeTableBody.innerHTML = paginatedRequests.map(request => {
+                const requestDate = request.timestamp?.toDate ? request.timestamp.toDate() : new Date(request.timestamp || request.data);
+                const tempoDecorrido = calculateTimeElapsed(requestDate);
+                
+                return `
+                    <tr class="table-row hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm text-gray-900">${request.id.substring(0, 8)}...</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">${request.requisitante}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">${request.setor}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">${request.material}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900 text-center">${request.quantidade}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">${request.data}</td>
+                        <td class="px-4 py-3 text-sm">
+                            <span class="status-badge ${getStatusClass(request.status)} text-xs py-1 px-2 rounded-full">${getStatusText(request.status)}</span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-900">${tempoDecorrido}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Atualizar informações de paginação
+            elements.currentCount.textContent = paginatedRequests.length;
+            elements.totalCount.textContent = state.filteredRequests.length;
+            elements.pageInfo.textContent = `Página ${state.currentPage}`;
+            
+            // Atualizar botões de paginação
+            elements.prevPage.disabled = state.currentPage === 1;
+            elements.nextPage.disabled = endIndex >= state.filteredRequests.length;
+        }
+
+        function updateStatistics() {
+            const total = state.filteredRequests.length;
+            const pendentes = state.filteredRequests.filter(req => req.status === 'pendente').length;
+            const entregues = state.filteredRequests.filter(req => req.status === 'entregue').length;
+            const negadas = state.filteredRequests.filter(req => req.status === 'negado').length;
+
+            elements.totalRequisicoes.textContent = total;
+            elements.requisicoesPendentes.textContent = pendentes;
+            elements.requisicoesEntregues.textContent = entregues;
+            elements.requisicoesNegadas.textContent = negadas;
+        }
+
+        function calculateTimeElapsed(startDate) {
+            const now = new Date();
+            const diffMs = now - startDate;
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            
+            if (diffDays > 0) {
+                return `${diffDays}d ${diffHours}h`;
+            } else if (diffHours > 0) {
+                return `${diffHours}h`;
+            } else {
+                return '<1h';
+            }
+        }
+
+        function previousPage() {
+            if (state.currentPage > 1) {
+                state.currentPage--;
+                updateRastreabilidadeTable();
+            }
+        }
+
+        function nextPage() {
+            const totalPages = Math.ceil(state.filteredRequests.length / state.itemsPerPage);
+            if (state.currentPage < totalPages) {
+                state.currentPage++;
+                updateRastreabilidadeTable();
+            }
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Cabeçalho do PDF
+            doc.setFontSize(16);
+            doc.text('Relatório de Rastreabilidade - Sistema de Requisições', 14, 15);
+            doc.setFontSize(10);
+            doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 22);
+            doc.text(`Usuário: ${state.currentUser.email}`, 14, 28);
+
+            // Dados para a tabela
+            const tableData = state.filteredRequests.map(request => [
+                request.id.substring(0, 8) + '...',
+                request.requisitante,
+                request.setor,
+                request.material,
+                request.quantidade.toString(),
+                request.data,
+                getStatusText(request.status)
+            ]);
+
+            // Criar tabela
+            doc.autoTable({
+                startY: 35,
+                head: [['ID', 'Requisitante', 'Setor', 'Material', 'Qtd', 'Data', 'Status']],
+                body: tableData,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [59, 130, 246] }
+            });
+
+            // Estatísticas no final
+            const finalY = doc.lastAutoTable.finalY + 10;
+            doc.setFontSize(10);
+            doc.text(`Total de Requisições: ${state.filteredRequests.length}`, 14, finalY);
+            doc.text(`Pendentes: ${state.filteredRequests.filter(req => req.status === 'pendente').length}`, 14, finalY + 6);
+            doc.text(`Entregues: ${state.filteredRequests.filter(req => req.status === 'entregue').length}`, 14, finalY + 12);
+            doc.text(`Negadas: ${state.filteredRequests.filter(req => req.status === 'negado').length}`, 14, finalY + 18);
+
+            // Salvar PDF
+            doc.save(`rastreabilidade-requisicoes-${new Date().toISOString().split('T')[0]}.pdf`);
         }
 
         function showConfirmationModal(message, confirmCallback) {
