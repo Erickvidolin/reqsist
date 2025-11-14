@@ -87,6 +87,46 @@
         .table-row:hover {
             background-color: #f8fafc;
         }
+        
+        /* Melhorias para mobile */
+        @media (max-width: 768px) {
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            
+            .mobile-scroll {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .mobile-text-sm {
+                font-size: 0.875rem;
+            }
+            
+            .mobile-p-2 {
+                padding: 0.5rem;
+            }
+        }
+        
+        /* Estilo para tabela responsiva */
+        .responsive-table {
+            min-width: 800px;
+        }
+        
+        @media (max-width: 640px) {
+            .mobile-stack {
+                flex-direction: column;
+            }
+            
+            .mobile-w-full {
+                width: 100%;
+            }
+            
+            .mobile-mb-2 {
+                margin-bottom: 0.5rem;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -116,7 +156,7 @@
             </form>
             
             <div class="mt-6 text-center text-sm text-gray-500">
-                <p>Use credenciais válidas do Firebase Authentication</p>
+                <p></p>
             </div>
         </div>
     </div>
@@ -144,18 +184,18 @@
                 <div class="container mx-auto px-4">
                     <ul class="flex">
                         <li>
-                            <a href="#" id="nav-requisicao" class="nav-link active text-white py-3 px-6 block font-medium">
-                                <i class="fas fa-plus-circle mr-2"></i> Nova Requisição
+                            <a href="#" id="nav-requisicao" class="nav-link active text-white py-3 px-4 md:px-6 block font-medium text-sm md:text-base">
+                                <i class="fas fa-plus-circle mr-2"></i> <span class="hidden sm:inline">Nova</span> Requisição
                             </a>
                         </li>
                         <li>
-                            <a href="#" id="nav-atendimento" class="nav-link text-white py-3 px-6 block font-medium">
-                                <i class="fas fa-tasks mr-2"></i> Atendimento
+                            <a href="#" id="nav-atendimento" class="nav-link text-white py-3 px-4 md:px-6 block font-medium text-sm md:text-base">
+                                <i class="fas fa-tasks mr-2"></i> <span class="hidden sm:inline">Atendimento</span>
                             </a>
                         </li>
                         <li>
-                            <a href="#" id="nav-rastreabilidade" class="nav-link text-white py-3 px-6 block font-medium">
-                                <i class="fas fa-search mr-2"></i> Rastreabilidade
+                            <a href="#" id="nav-rastreabilidade" class="nav-link text-white py-3 px-4 md:px-6 block font-medium text-sm md:text-base">
+                                <i class="fas fa-search mr-2"></i> <span class="hidden sm:inline">Rastreabilidade</span>
                             </a>
                         </li>
                     </ul>
@@ -164,54 +204,52 @@
         </header>
 
         <!-- Conteúdo Principal -->
-        <main class="container mx-auto px-4 py-8">
+        <main class="container mx-auto px-4 py-6 md:py-8">
             <!-- Tela de Requisição -->
             <div id="requisicao-screen" class="fade-in">
-                <div class="bg-white rounded-xl card-shadow p-6 mb-8">
-                    <h2 class="text-xl font-bold text-gray-800 mb-6">Nova Requisição de Material</h2>
+                <div class="bg-white rounded-xl card-shadow p-4 md:p-6 mb-6 md:mb-8">
+                    <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6">Nova Requisição de Material</h2>
                     
                     <form id="requisicao-form">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                             <div>
                                 <label for="requisitante" class="block text-gray-700 text-sm font-medium mb-2">Requisitante</label>
-                                <input type="text" id="requisitante" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100" readonly>
+                                <input type="text" id="requisitante" class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-sm md:text-base" readonly>
                             </div>
                             
                             <div>
                                 <label for="setor" class="block text-gray-700 text-sm font-medium mb-2">Setor</label>
-                                <select id="setor" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" required>
+                                <select id="setor" class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base" required>
                                     <option value="" disabled selected>Selecione o setor</option>
                                     <option value="Administração">Administração</option>
-                                    <option value="Acabamento">Produção</option>
+                                    <option value="Acabamento">Acabamento</option>
                                     <option value="Qualidade">Qualidade</option>
                                     <option value="PDI">PDI</option>
                                     <option value="Usinagem">Usinagem</option>
-                                    <option value="Financeiro">Financeiro</option>
                                     <option value="Area limpa">Área limpa</option>
                                     <option value="Quarentena">Quarentena</option>
                                     <option value="Expedição">Expedição</option>
-                                    
                                 </select>
                             </div>
                             
                             <div>
                                 <label for="material" class="block text-gray-700 text-sm font-medium mb-2">Material</label>
-                                <input type="text" id="material" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Descrição do material" required>
+                                <input type="text" id="material" class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base" placeholder="Descrição do material" required>
                             </div>
                             
                             <div>
                                 <label for="quantidade" class="block text-gray-700 text-sm font-medium mb-2">Quantidade</label>
-                                <input type="number" id="quantidade" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" min="1" value="1" required>
+                                <input type="number" id="quantidade" class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base" min="1" value="1" required>
                             </div>
                         </div>
                         
-                        <div class="mt-6">
+                        <div class="mt-4 md:mt-6">
                             <label for="observacoes" class="block text-gray-700 text-sm font-medium mb-2">Observações</label>
-                            <textarea id="observacoes" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" rows="3" placeholder="Informações adicionais (opcional)"></textarea>
+                            <textarea id="observacoes" class="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base" rows="3" placeholder="Informações adicionais (opcional)"></textarea>
                         </div>
                         
-                        <div class="mt-8 flex justify-end">
-                            <button type="submit" class="bg-primary text-white py-2 px-6 rounded-lg hover:bg-secondary transition duration-200 font-medium">
+                        <div class="mt-6 md:mt-8 flex justify-end">
+                            <button type="submit" class="bg-primary text-white py-2 px-4 md:px-6 rounded-lg hover:bg-secondary transition duration-200 font-medium text-sm md:text-base">
                                 <i class="fas fa-paper-plane mr-2"></i> Enviar Requisição
                             </button>
                         </div>
@@ -219,9 +257,9 @@
                 </div>
                 
                 <!-- Histórico de Requisições do Usuário -->
-                <div class="bg-white rounded-xl card-shadow p-6">
-                    <h2 class="text-xl font-bold text-gray-800 mb-6">Minhas Requisições</h2>
-                    <div id="user-requests" class="space-y-4">
+                <div class="bg-white rounded-xl card-shadow p-4 md:p-6">
+                    <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6">Minhas Requisições</h2>
+                    <div id="user-requests" class="space-y-3 md:space-y-4">
                         <!-- As requisições do usuário serão carregadas aqui -->
                     </div>
                 </div>
@@ -229,51 +267,51 @@
 
             <!-- Tela de Atendimento (apenas para admin) -->
             <div id="atendimento-screen" class="hidden fade-in">
-                <div class="bg-white rounded-xl card-shadow p-6">
-                    <h2 class="text-xl font-bold text-gray-800 mb-6">Atendimento de Requisições</h2>
+                <div class="bg-white rounded-xl card-shadow p-4 md:p-6">
+                    <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6">Atendimento de Requisições</h2>
                     
-                    <div class="mb-6 flex flex-wrap gap-2">
-                        <button class="filter-btn active bg-primary text-white py-1 px-3 rounded-lg text-sm" data-status="todos">Todos</button>
-                        <button class="filter-btn bg-gray-200 text-gray-700 py-1 px-3 rounded-lg text-sm" data-status="pendente">Pendentes</button>
-                        <button class="filter-btn bg-warning text-white py-1 px-3 rounded-lg text-sm" data-status="aprovado">Aprovados</button>
-                        <button class="filter-btn bg-success text-white py-1 px-3 rounded-lg text-sm" data-status="entregue">Entregues</button>
-                        <button class="filter-btn bg-danger text-white py-1 px-3 rounded-lg text-sm" data-status="negado">Negados</button>
+                    <div class="mb-4 md:mb-6 flex flex-wrap gap-2">
+                        <button class="filter-btn active bg-primary text-white py-1 px-2 md:px-3 rounded-lg text-xs md:text-sm" data-status="todos">Todos</button>
+                        <button class="filter-btn bg-gray-200 text-gray-700 py-1 px-2 md:px-3 rounded-lg text-xs md:text-sm" data-status="pendente">Pendentes</button>
+                        <button class="filter-btn bg-warning text-white py-1 px-2 md:px-3 rounded-lg text-xs md:text-sm" data-status="aprovado">Aprovados</button>
+                        <button class="filter-btn bg-success text-white py-1 px-2 md:px-3 rounded-lg text-xs md:text-sm" data-status="entregue">Entregues</button>
+                        <button class="filter-btn bg-danger text-white py-1 px-2 md:px-3 rounded-lg text-xs md:text-sm" data-status="negado">Negados</button>
                     </div>
                     
-                    <div id="requests-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div id="requests-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                         <!-- Os cards de requisição serão carregados aqui -->
                     </div>
                 </div>
             </div>
 
-            <!-- NOVA TELA: Rastreabilidade -->
+            <!-- Tela de Rastreabilidade -->
             <div id="rastreabilidade-screen" class="hidden fade-in">
-                <div class="bg-white rounded-xl card-shadow p-6 mb-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-bold text-gray-800">Rastreabilidade de Requisições</h2>
-                        <div class="flex space-x-3">
-                            <button id="export-pdf-btn" class="bg-danger text-white py-2 px-4 rounded-lg hover:bg-red-700 transition duration-200 font-medium">
+                <div class="bg-white rounded-xl card-shadow p-4 md:p-6 mb-6">
+                    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4 md:mb-6 gap-4">
+                        <h2 class="text-lg md:text-xl font-bold text-gray-800">Rastreabilidade de Requisições</h2>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <button id="export-pdf-btn" class="bg-danger text-white py-2 px-3 md:px-4 rounded-lg hover:bg-red-700 transition duration-200 font-medium text-sm md:text-base order-2 sm:order-1">
                                 <i class="fas fa-file-pdf mr-2"></i> Exportar PDF
                             </button>
-                            <button id="refresh-data-btn" class="bg-primary text-white py-2 px-4 rounded-lg hover:bg-secondary transition duration-200 font-medium">
+                            <button id="refresh-data-btn" class="bg-primary text-white py-2 px-3 md:px-4 rounded-lg hover:bg-secondary transition duration-200 font-medium text-sm md:text-base order-1 sm:order-2">
                                 <i class="fas fa-sync-alt mr-2"></i> Atualizar
                             </button>
                         </div>
                     </div>
 
                     <!-- Filtros -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
                         <div>
                             <label class="block text-gray-700 text-sm font-medium mb-2">Data Início</label>
-                            <input type="date" id="filter-data-inicio" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <input type="date" id="filter-data-inicio" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                         </div>
                         <div>
                             <label class="block text-gray-700 text-sm font-medium mb-2">Data Fim</label>
-                            <input type="date" id="filter-data-fim" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <input type="date" id="filter-data-fim" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                         </div>
                         <div>
                             <label class="block text-gray-700 text-sm font-medium mb-2">Status</label>
-                            <select id="filter-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <select id="filter-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 <option value="todos">Todos</option>
                                 <option value="pendente">Pendente</option>
                                 <option value="aprovado">Aprovado</option>
@@ -283,7 +321,7 @@
                         </div>
                         <div>
                             <label class="block text-gray-700 text-sm font-medium mb-2">Setor</label>
-                            <select id="filter-setor" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <select id="filter-setor" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 <option value="todos">Todos</option>
                                 <option value="Administração">Administração</option>
                                 <option value="Produção">Produção</option>
@@ -296,38 +334,38 @@
                     </div>
 
                     <!-- Estatísticas -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-blue-50 p-4 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-primary" id="total-requisicoes">0</div>
-                            <div class="text-sm text-gray-600">Total</div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
+                        <div class="bg-blue-50 p-3 md:p-4 rounded-lg text-center">
+                            <div class="text-xl md:text-2xl font-bold text-primary" id="total-requisicoes">0</div>
+                            <div class="text-xs md:text-sm text-gray-600">Total</div>
                         </div>
-                        <div class="bg-yellow-50 p-4 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-warning" id="requisicoes-pendentes">0</div>
-                            <div class="text-sm text-gray-600">Pendentes</div>
+                        <div class="bg-yellow-50 p-3 md:p-4 rounded-lg text-center">
+                            <div class="text-xl md:text-2xl font-bold text-warning" id="requisicoes-pendentes">0</div>
+                            <div class="text-xs md:text-sm text-gray-600">Pendentes</div>
                         </div>
-                        <div class="bg-green-50 p-4 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-success" id="requisicoes-entregues">0</div>
-                            <div class="text-sm text-gray-600">Entregues</div>
+                        <div class="bg-green-50 p-3 md:p-4 rounded-lg text-center">
+                            <div class="text-xl md:text-2xl font-bold text-success" id="requisicoes-entregues">0</div>
+                            <div class="text-xs md:text-sm text-gray-600">Entregues</div>
                         </div>
-                        <div class="bg-red-50 p-4 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-danger" id="requisicoes-negadas">0</div>
-                            <div class="text-sm text-gray-600">Negadas</div>
+                        <div class="bg-red-50 p-3 md:p-4 rounded-lg text-center">
+                            <div class="text-xl md:text-2xl font-bold text-danger" id="requisicoes-negadas">0</div>
+                            <div class="text-xs md:text-sm text-gray-600">Negadas</div>
                         </div>
                     </div>
 
-                    <!-- Tabela de Rastreabilidade -->
-                    <div class="overflow-x-auto">
-                        <table class="w-full table-auto">
+                    <!-- Tabela de Rastreabilidade - Versão Desktop -->
+                    <div class="hidden md:block overflow-x-auto mobile-scroll">
+                        <table class="w-full table-auto responsive-table">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requisitante</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Setor</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantidade</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tempo</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requisitante</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Setor</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Qtd</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tempo</th>
                                 </tr>
                             </thead>
                             <tbody id="rastreabilidade-table-body" class="bg-white divide-y divide-gray-200">
@@ -336,15 +374,20 @@
                         </table>
                     </div>
 
+                    <!-- Versão Mobile Cards -->
+                    <div id="rastreabilidade-mobile-cards" class="md:hidden space-y-3">
+                        <!-- Cards serão gerados via JavaScript para mobile -->
+                    </div>
+
                     <!-- Paginação -->
-                    <div class="flex justify-between items-center mt-6">
-                        <div class="text-sm text-gray-600">
+                    <div class="flex flex-col sm:flex-row justify-between items-center mt-4 md:mt-6 gap-3">
+                        <div class="text-xs md:text-sm text-gray-600">
                             Mostrando <span id="current-count">0</span> de <span id="total-count">0</span> registros
                         </div>
                         <div class="flex space-x-2">
-                            <button id="prev-page" class="px-3 py-1 border border-gray-300 rounded disabled:opacity-50">Anterior</button>
-                            <span id="page-info" class="px-3 py-1">Página 1</span>
-                            <button id="next-page" class="px-3 py-1 border border-gray-300 rounded disabled:opacity-50">Próxima</button>
+                            <button id="prev-page" class="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 text-sm">Anterior</button>
+                            <span id="page-info" class="px-3 py-1 text-sm">Página 1</span>
+                            <button id="next-page" class="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 text-sm">Próxima</button>
                         </div>
                     </div>
                 </div>
@@ -354,12 +397,12 @@
 
     <!-- Modal de Confirmação -->
     <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+        <div class="bg-white rounded-xl p-4 md:p-6 w-full max-w-md mx-4">
             <h3 class="text-lg font-bold text-gray-800 mb-4">Confirmar Ação</h3>
             <p id="confirmation-message" class="text-gray-600 mb-6">Tem certeza que deseja prosseguir?</p>
             <div class="flex justify-end space-x-3">
-                <button id="cancel-action" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition duration-200">Cancelar</button>
-                <button id="confirm-action" class="bg-primary text-white py-2 px-4 rounded-lg hover:bg-secondary transition duration-200">Confirmar</button>
+                <button id="cancel-action" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition duration-200 text-sm md:text-base">Cancelar</button>
+                <button id="confirm-action" class="bg-primary text-white py-2 px-4 rounded-lg hover:bg-secondary transition duration-200 text-sm md:text-base">Confirmar</button>
             </div>
         </div>
     </div>
@@ -424,7 +467,11 @@
             nextPage: document.getElementById('next-page')
         };
 
-        console.log('Script carregado, elementos:', Object.keys(elements).length);
+        console.log('Sistema inicializado. Elementos carregados:', {
+            rastreabilidadeTableBody: !!elements.rastreabilidadeTableBody,
+            filteredRequests: state.filteredRequests.length,
+            requests: state.requests.length
+        });
 
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
@@ -627,43 +674,54 @@
                 querySnapshot.forEach((doc) => {
                     const request = doc.data();
                     request.id = doc.id;
+                    
+                    // Garantir que a data está formatada
+                    if (!request.data && request.timestamp) {
+                        const timestamp = request.timestamp.toDate ? request.timestamp.toDate() : new Date(request.timestamp);
+                        request.data = timestamp.toLocaleString('pt-BR');
+                    }
+                    
                     state.requests.push(request);
                 });
                 
-                // Atualizar as interfaces
-                if (state.isAdmin && state.currentFilter === 'atendimento') {
-                    renderRequests();
-                }
+                console.log('Requisições carregadas:', state.requests.length);
+                
+                // Atualizar todas as interfaces
                 renderUserRequests();
                 
-                // Atualizar rastreabilidade se estiver visível
-                if (!elements.rastreabilidadeScreen.classList.contains('hidden')) {
-                    applyFilters();
+                if (state.isAdmin) {
+                    renderRequests();
+                    // Se estiver na tela de rastreabilidade, atualizar
+                    if (!elements.rastreabilidadeScreen.classList.contains('hidden')) {
+                        applyFilters();
+                    }
                 }
+            }, (error) => {
+                console.error('Erro no listener:', error);
             });
         }
 
         async function checkIfUserIsAdmin(user) {
-    try {
-        console.log('Verificando se usuário é admin:', user.email);
-        
-        // Lista de administradores - ADICIONE SEUS EMAILS AQUI
-        const adminEmails = [
-            'erick@ibeg.com',
-            'guilherme@ibeg.com',
-            'admin@empresa.com'  // você pode manter ou remover
-        ];
-        
-        const isAdmin = adminEmails.includes(user.email.toLowerCase());
-        console.log('Usuário é admin?', isAdmin);
-        return isAdmin;
-        
-    } catch (error) {
-        console.error('Erro ao verificar admin:', error);
-        // Em caso de erro, retorna false (não é admin)
-        return false;
-    }
-}
+            try {
+                console.log('Verificando se usuário é admin:', user.email);
+                
+                // Lista de administradores - ADICIONE SEUS EMAILS AQUI
+                const adminEmails = [
+                    'erick@ibeg.com',
+                    'guilherme@ibeg.com',
+                    'admin@empresa.com'
+                ];
+                
+                const isAdmin = adminEmails.includes(user.email.toLowerCase());
+                console.log('Usuário é admin?', isAdmin);
+                return isAdmin;
+                
+            } catch (error) {
+                console.error('Erro ao verificar admin:', error);
+                // Em caso de erro, retorna false (não é admin)
+                return false;
+            }
+        }
 
         // Funções de renderização
         function showLoginScreen() {
@@ -738,21 +796,21 @@
             }
             
             elements.userRequests.innerHTML = userRequests.map(request => `
-                <div class="border border-gray-200 rounded-lg p-4">
+                <div class="border border-gray-200 rounded-lg p-3 md:p-4">
                     <div class="flex justify-between items-start mb-2">
-                        <h3 class="font-medium text-gray-800">${request.material}</h3>
+                        <h3 class="font-medium text-gray-800 text-sm md:text-base">${request.material}</h3>
                         <span class="status-badge ${getStatusClass(request.status)} text-xs py-1 px-2 rounded-full">${getStatusText(request.status)}</span>
                     </div>
-                    <div class="text-sm text-gray-600 mb-1">
+                    <div class="text-xs md:text-sm text-gray-600 mb-1">
                         <span class="font-medium">Setor:</span> ${request.setor}
                     </div>
-                    <div class="text-sm text-gray-600 mb-1">
+                    <div class="text-xs md:text-sm text-gray-600 mb-1">
                         <span class="font-medium">Quantidade:</span> ${request.quantidade}
                     </div>
-                    <div class="text-sm text-gray-600 mb-1">
+                    <div class="text-xs md:text-sm text-gray-600 mb-1">
                         <span class="font-medium">Data:</span> ${request.data}
                     </div>
-                    ${request.observacoes ? `<div class="text-sm text-gray-600 mt-2">
+                    ${request.observacoes ? `<div class="text-xs md:text-sm text-gray-600 mt-2">
                         <span class="font-medium">Observações:</span> ${request.observacoes}
                     </div>` : ''}
                 </div>
@@ -769,9 +827,9 @@
             
             if (filteredRequests.length === 0) {
                 elements.requestsContainer.innerHTML = `
-                    <div class="col-span-full text-center py-12 text-gray-500">
-                        <i class="fas fa-inbox text-5xl mb-4"></i>
-                        <p class="text-lg">Nenhuma requisição encontrada</p>
+                    <div class="col-span-full text-center py-8 md:py-12 text-gray-500">
+                        <i class="fas fa-inbox text-4xl md:text-5xl mb-3 md:mb-4"></i>
+                        <p class="text-base md:text-lg">Nenhuma requisição encontrada</p>
                     </div>
                 `;
                 return;
@@ -779,56 +837,56 @@
             
             elements.requestsContainer.innerHTML = filteredRequests.map(request => `
                 <div class="bg-white border border-gray-200 rounded-xl card-shadow overflow-hidden">
-                    <div class="p-4 border-b border-gray-200">
+                    <div class="p-3 md:p-4 border-b border-gray-200">
                         <div class="flex justify-between items-start mb-2">
-                            <h3 class="font-bold text-gray-800 text-lg">${request.material}</h3>
+                            <h3 class="font-bold text-gray-800 text-base md:text-lg">${request.material}</h3>
                             <span class="status-badge ${getStatusClass(request.status)} text-xs py-1 px-2 rounded-full">${getStatusText(request.status)}</span>
                         </div>
-                        <div class="text-sm text-gray-600 mb-1">
+                        <div class="text-xs md:text-sm text-gray-600 mb-1">
                             <i class="fas fa-user mr-1"></i> ${request.requisitante}
                         </div>
-                        <div class="text-sm text-gray-600 mb-1">
+                        <div class="text-xs md:text-sm text-gray-600 mb-1">
                             <i class="fas fa-building mr-1"></i> ${request.setor}
                         </div>
-                        <div class="text-sm text-gray-600">
+                        <div class="text-xs md:text-sm text-gray-600">
                             <i class="fas fa-calendar mr-1"></i> ${request.data}
                         </div>
                     </div>
                     
-                    <div class="p-4">
+                    <div class="p-3 md:p-4">
                         <div class="flex justify-between items-center mb-3">
-                            <span class="text-sm text-gray-600">Quantidade:</span>
-                            <span class="font-medium">${request.quantidade}</span>
+                            <span class="text-xs md:text-sm text-gray-600">Quantidade:</span>
+                            <span class="font-medium text-sm md:text-base">${request.quantidade}</span>
                         </div>
                         
                         ${request.observacoes ? `
-                        <div class="mb-4">
-                            <span class="text-sm text-gray-600 block mb-1">Observações:</span>
-                            <p class="text-sm bg-gray-50 p-2 rounded">${request.observacoes}</p>
+                        <div class="mb-3 md:mb-4">
+                            <span class="text-xs md:text-sm text-gray-600 block mb-1">Observações:</span>
+                            <p class="text-xs md:text-sm bg-gray-50 p-2 rounded">${request.observacoes}</p>
                         </div>
                         ` : ''}
                         
-                        <div class="flex space-x-2 mt-4">
+                        <div class="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 mt-3 md:mt-4">
                             ${request.status === 'pendente' ? `
-                            <button class="flex-1 bg-success text-white py-2 px-3 rounded-lg text-sm hover:bg-green-700 transition duration-200 approve-btn" data-id="${request.id}">
+                            <button class="flex-1 bg-success text-white py-2 px-3 rounded-lg text-xs md:text-sm hover:bg-green-700 transition duration-200 approve-btn" data-id="${request.id}">
                                 <i class="fas fa-check mr-1"></i> Aprovar
                             </button>
-                            <button class="flex-1 bg-danger text-white py-2 px-3 rounded-lg text-sm hover:bg-red-700 transition duration-200 deny-btn" data-id="${request.id}">
+                            <button class="flex-1 bg-danger text-white py-2 px-3 rounded-lg text-xs md:text-sm hover:bg-red-700 transition duration-200 deny-btn" data-id="${request.id}">
                                 <i class="fas fa-times mr-1"></i> Negar
                             </button>
                             ` : ''}
                             
                             ${request.status === 'aprovado' ? `
-                            <button class="flex-1 bg-success text-white py-2 px-3 rounded-lg text-sm hover:bg-green-700 transition duration-200 complete-btn" data-id="${request.id}">
+                            <button class="flex-1 bg-success text-white py-2 px-3 rounded-lg text-xs md:text-sm hover:bg-green-700 transition duration-200 complete-btn" data-id="${request.id}">
                                 <i class="fas fa-check-double mr-1"></i> Entregue
                             </button>
-                            <button class="flex-1 bg-gray-200 text-gray-700 py-2 px-3 rounded-lg text-sm hover:bg-gray-300 transition duration-200 pendent-btn" data-id="${request.id}">
+                            <button class="flex-1 bg-gray-200 text-gray-700 py-2 px-3 rounded-lg text-xs md:text-sm hover:bg-gray-300 transition duration-200 pendent-btn" data-id="${request.id}">
                                 <i class="fas fa-undo mr-1"></i> Reabrir
                             </button>
                             ` : ''}
                             
                             ${request.status === 'entregue' || request.status === 'negado' ? `
-                            <button class="flex-1 bg-gray-200 text-gray-700 py-2 px-3 rounded-lg text-sm hover:bg-gray-300 transition duration-200 pendent-btn" data-id="${request.id}">
+                            <button class="flex-1 bg-gray-200 text-gray-700 py-2 px-3 rounded-lg text-xs md:text-sm hover:bg-gray-300 transition duration-200 pendent-btn" data-id="${request.id}">
                                 <i class="fas fa-undo mr-1"></i> Reabrir
                             </button>
                             ` : ''}
@@ -887,13 +945,17 @@
         // NOVAS FUNÇÕES PARA RASTREABILIDADE
 
         function applyFilters() {
+            console.log('Aplicando filtros...', state.requests.length);
+            
             let filtered = [...state.requests];
 
             // Filtro por data
             if (elements.filterDataInicio.value) {
                 const startDate = new Date(elements.filterDataInicio.value);
+                startDate.setHours(0, 0, 0, 0);
                 filtered = filtered.filter(req => {
-                    const reqDate = new Date(req.timestamp?.toDate() || req.timestamp || req.data);
+                    const reqDate = req.timestamp?.toDate ? req.timestamp.toDate() : new Date(req.timestamp || req.data);
+                    reqDate.setHours(0, 0, 0, 0);
                     return reqDate >= startDate;
                 });
             }
@@ -902,7 +964,7 @@
                 const endDate = new Date(elements.filterDataFim.value);
                 endDate.setHours(23, 59, 59, 999);
                 filtered = filtered.filter(req => {
-                    const reqDate = new Date(req.timestamp?.toDate() || req.timestamp || req.data);
+                    const reqDate = req.timestamp?.toDate ? req.timestamp.toDate() : new Date(req.timestamp || req.data);
                     return reqDate <= endDate;
                 });
             }
@@ -919,6 +981,7 @@
 
             state.filteredRequests = filtered;
             state.currentPage = 1;
+            console.log('Requisições filtradas:', filtered.length);
             updateRastreabilidadeTable();
             updateStatistics();
         }
@@ -928,25 +991,66 @@
             const endIndex = startIndex + state.itemsPerPage;
             const paginatedRequests = state.filteredRequests.slice(startIndex, endIndex);
 
+            // Versão Desktop (Tabela)
             elements.rastreabilidadeTableBody.innerHTML = paginatedRequests.map(request => {
                 const requestDate = request.timestamp?.toDate ? request.timestamp.toDate() : new Date(request.timestamp || request.data);
                 const tempoDecorrido = calculateTimeElapsed(requestDate);
                 
                 return `
                     <tr class="table-row hover:bg-gray-50">
-                        <td class="px-4 py-3 text-sm text-gray-900">${request.id.substring(0, 8)}...</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">${request.requisitante}</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">${request.setor}</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">${request.material}</td>
-                        <td class="px-4 py-3 text-sm text-gray-900 text-center">${request.quantidade}</td>
-                        <td class="px-4 py-3 text-sm text-gray-900">${request.data}</td>
-                        <td class="px-4 py-3 text-sm">
+                        <td class="px-3 py-2 text-sm text-gray-900" title="${request.id}">${request.id.substring(0, 6)}...</td>
+                        <td class="px-3 py-2 text-sm text-gray-900">${request.requisitante}</td>
+                        <td class="px-3 py-2 text-sm text-gray-900">${request.setor}</td>
+                        <td class="px-3 py-2 text-sm text-gray-900" title="${request.material}">${request.material.length > 20 ? request.material.substring(0, 20) + '...' : request.material}</td>
+                        <td class="px-3 py-2 text-sm text-gray-900 text-center">${request.quantidade}</td>
+                        <td class="px-3 py-2 text-sm text-gray-900">${request.data}</td>
+                        <td class="px-3 py-2 text-sm">
                             <span class="status-badge ${getStatusClass(request.status)} text-xs py-1 px-2 rounded-full">${getStatusText(request.status)}</span>
                         </td>
-                        <td class="px-4 py-3 text-sm text-gray-900">${tempoDecorrido}</td>
+                        <td class="px-3 py-2 text-sm text-gray-900">${tempoDecorrido}</td>
                     </tr>
                 `;
             }).join('');
+
+            // Versão Mobile (Cards)
+            const mobileCardsContainer = document.getElementById('rastreabilidade-mobile-cards');
+            if (mobileCardsContainer) {
+                mobileCardsContainer.innerHTML = paginatedRequests.map(request => {
+                    const requestDate = request.timestamp?.toDate ? request.timestamp.toDate() : new Date(request.timestamp || request.data);
+                    const tempoDecorrido = calculateTimeElapsed(requestDate);
+                    
+                    return `
+                        <div class="bg-white border border-gray-200 rounded-lg p-3 card-shadow">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-800 text-sm">${request.material}</h3>
+                                    <p class="text-xs text-gray-600">${request.requisitante} • ${request.setor}</p>
+                                </div>
+                                <span class="status-badge ${getStatusClass(request.status)} text-xs py-1 px-2 rounded-full ml-2">${getStatusText(request.status)}</span>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div>
+                                    <span class="text-gray-600">Qtd:</span>
+                                    <p class="font-medium">${request.quantidade}</p>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600">Tempo:</span>
+                                    <p class="font-medium">${tempoDecorrido}</p>
+                                </div>
+                                <div class="col-span-2">
+                                    <span class="text-gray-600">Data:</span>
+                                    <p class="font-medium">${request.data}</p>
+                                </div>
+                                <div class="col-span-2">
+                                    <span class="text-gray-600">ID:</span>
+                                    <p class="font-medium text-xs" title="${request.id}">${request.id.substring(0, 10)}...</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
 
             // Atualizar informações de paginação
             elements.currentCount.textContent = paginatedRequests.length;
