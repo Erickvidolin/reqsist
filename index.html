@@ -14,7 +14,7 @@
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
         // Your web app's Firebase configuration
@@ -50,6 +50,7 @@
             query,
             where,
             orderBy,
+            serverTimestamp,
             signInWithEmailAndPassword,
             signOut,
             onAuthStateChanged
@@ -67,7 +68,8 @@
                         secondary: '#1e40af',
                         success: '#10b981',
                         warning: '#f59e0b',
-                        danger: '#ef4444'
+                        danger: '#ef4444',
+                        info: '#8b5cf6'
                     }
                 }
             }
@@ -86,6 +88,22 @@
         }
         .table-row:hover {
             background-color: #f8fafc;
+        }
+        
+        /* Loading spinner */
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         /* Melhorias para mobile */
@@ -258,7 +276,12 @@
                 
                 <!-- Histórico de Requisições do Usuário -->
                 <div class="bg-white rounded-xl card-shadow p-4 md:p-6">
-                    <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6">Minhas Requisições</h2>
+                    <div class="flex justify-between items-center mb-4 md:mb-6">
+                        <h2 class="text-lg md:text-xl font-bold text-gray-800">Minhas Requisições</h2>
+                        <button id="refresh-user-requests" class="bg-primary text-white py-1 px-3 rounded-lg hover:bg-secondary transition duration-200 text-sm">
+                            <i class="fas fa-sync-alt mr-1"></i> Atualizar
+                        </button>
+                    </div>
                     <div id="user-requests" class="space-y-3 md:space-y-4">
                         <!-- As requisições do usuário serão carregadas aqui -->
                     </div>
@@ -268,11 +291,17 @@
             <!-- Tela de Atendimento (apenas para admin) -->
             <div id="atendimento-screen" class="hidden fade-in">
                 <div class="bg-white rounded-xl card-shadow p-4 md:p-6">
-                    <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6">Atendimento de Requisições</h2>
+                    <div class="flex justify-between items-center mb-4 md:mb-6">
+                        <h2 class="text-lg md:text-xl font-bold text-gray-800">Atendimento de Requisições</h2>
+                        <button id="refresh-admin-requests" class="bg-primary text-white py-1 px-3 rounded-lg hover:bg-secondary transition duration-200 text-sm">
+                            <i class="fas fa-sync-alt mr-1"></i> Atualizar
+                        </button>
+                    </div>
                     
                     <div class="mb-4 md:mb-6 flex flex-wrap gap-2">
                         <button class="filter-btn active bg-primary text-white py-1 px-2 md:px-3 rounded-lg text-xs md:text-sm" data-status="todos">Todos</button>
                         <button class="filter-btn bg-gray-200 text-gray-700 py-1 px-2 md:px-3 rounded-lg text-xs md:text-sm" data-status="pendente">Pendentes</button>
+                        <button class="filter-btn bg-info text-white py-1 px-2 md:px-3 rounded-lg text-xs md:text-sm" data-status="espera">Em Espera</button>
                         <button class="filter-btn bg-warning text-white py-1 px-2 md:px-3 rounded-lg text-xs md:text-sm" data-status="aprovado">Aprovados</button>
                         <button class="filter-btn bg-success text-white py-1 px-2 md:px-3 rounded-lg text-xs md:text-sm" data-status="entregue">Entregues</button>
                         <button class="filter-btn bg-danger text-white py-1 px-2 md:px-3 rounded-lg text-xs md:text-sm" data-status="negado">Negados</button>
@@ -314,6 +343,7 @@
                             <select id="filter-status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 <option value="todos">Todos</option>
                                 <option value="pendente">Pendente</option>
+                                <option value="espera">Em Espera</option>
                                 <option value="aprovado">Aprovado</option>
                                 <option value="entregue">Entregue</option>
                                 <option value="negado">Negado</option>
@@ -324,17 +354,19 @@
                             <select id="filter-setor" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 <option value="todos">Todos</option>
                                 <option value="Administração">Administração</option>
-                                <option value="Produção">Produção</option>
-                                <option value="Logística">Logística</option>
-                                <option value="TI">TI</option>
-                                <option value="RH">RH</option>
-                                <option value="Financeiro">Financeiro</option>
+                                <option value="Acabamento">Acabamento</option>
+                                <option value="Qualidade">Qualidade</option>
+                                <option value="PDI">PDI</option>
+                                <option value="Usinagem">Usinagem</option>
+                                <option value="Area limpa">Área limpa</option>
+                                <option value="Quarentena">Quarentena</option>
+                                <option value="Expedição">Expedição</option>
                             </select>
                         </div>
                     </div>
 
                     <!-- Estatísticas -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4 mb-4 md:mb-6">
                         <div class="bg-blue-50 p-3 md:p-4 rounded-lg text-center">
                             <div class="text-xl md:text-2xl font-bold text-primary" id="total-requisicoes">0</div>
                             <div class="text-xs md:text-sm text-gray-600">Total</div>
@@ -343,6 +375,10 @@
                             <div class="text-xl md:text-2xl font-bold text-warning" id="requisicoes-pendentes">0</div>
                             <div class="text-xs md:text-sm text-gray-600">Pendentes</div>
                         </div>
+                        <div class="bg-purple-50 p-3 md:p-4 rounded-lg text-center">
+                            <div class="text-xl md:text-2xl font-bold text-info" id="requisicoes-espera">0</div>
+                            <div class="text-xs md:text-sm text-gray-600">Em Espera</div>
+                        </div>
                         <div class="bg-green-50 p-3 md:p-4 rounded-lg text-center">
                             <div class="text-xl md:text-2xl font-bold text-success" id="requisicoes-entregues">0</div>
                             <div class="text-xs md:text-sm text-gray-600">Entregues</div>
@@ -350,6 +386,18 @@
                         <div class="bg-red-50 p-3 md:p-4 rounded-lg text-center">
                             <div class="text-xl md:text-2xl font-bold text-danger" id="requisicoes-negadas">0</div>
                             <div class="text-xs md:text-sm text-gray-600">Negadas</div>
+                        </div>
+                        <div class="bg-gray-50 p-3 md:p-4 rounded-lg text-center">
+                            <div class="text-xl md:text-2xl font-bold text-gray-600" id="requisicoes-aprovadas">0</div>
+                            <div class="text-xs md:text-sm text-gray-600">Aprovadas</div>
+                        </div>
+                    </div>
+
+                    <!-- Indicador de Carregamento -->
+                    <div id="loading-indicator" class="hidden mb-4">
+                        <div class="flex items-center justify-center p-4">
+                            <div class="loading-spinner"></div>
+                            <span class="ml-3 text-gray-600">Carregando dados...</span>
                         </div>
                     </div>
 
@@ -365,7 +413,7 @@
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Qtd</th>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tempo</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Histórico</th>
                                 </tr>
                             </thead>
                             <tbody id="rastreabilidade-table-body" class="bg-white divide-y divide-gray-200">
@@ -377,6 +425,12 @@
                     <!-- Versão Mobile Cards -->
                     <div id="rastreabilidade-mobile-cards" class="md:hidden space-y-3">
                         <!-- Cards serão gerados via JavaScript para mobile -->
+                    </div>
+
+                    <!-- Mensagem quando não há dados -->
+                    <div id="no-data-message" class="hidden text-center py-8">
+                        <i class="fas fa-inbox text-4xl text-gray-300 mb-3"></i>
+                        <p class="text-gray-500">Nenhuma requisição encontrada</p>
                     </div>
 
                     <!-- Paginação -->
@@ -407,6 +461,47 @@
         </div>
     </div>
 
+    <!-- Modal para motivo da negação -->
+    <div id="deny-reason-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-xl p-4 md:p-6 w-full max-w-md mx-4">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Motivo da Negação</h3>
+            <p class="text-gray-600 mb-4">Por favor, informe o motivo para negar esta requisição:</p>
+            <textarea id="deny-reason-input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base" rows="4" placeholder="Digite o motivo da negação..." required></textarea>
+            <div class="flex justify-end space-x-3 mt-4">
+                <button id="cancel-deny" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition duration-200 text-sm md:text-base">Cancelar</button>
+                <button id="confirm-deny" class="bg-danger text-white py-2 px-4 rounded-lg hover:bg-red-700 transition duration-200 text-sm md:text-base">Confirmar Negação</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para colocar em espera -->
+    <div id="wait-reason-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-xl p-4 md:p-6 w-full max-w-md mx-4">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Colocar Requisição em Espera</h3>
+            <p class="text-gray-600 mb-4">Por favor, informe o motivo para colocar esta requisição em espera:</p>
+            <textarea id="wait-reason-input" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm md:text-base" rows="4" placeholder="Digite o motivo para colocar em espera..." required></textarea>
+            <div class="flex justify-end space-x-3 mt-4">
+                <button id="cancel-wait" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition duration-200 text-sm md:text-base">Cancelar</button>
+                <button id="confirm-wait" class="bg-info text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition duration-200 text-sm md:text-base">Colocar em Espera</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para visualizar histórico -->
+    <div id="history-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-xl p-4 md:p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-800">Histórico Completo da Requisição</h3>
+                <button id="close-history" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="history-content" class="space-y-4">
+                <!-- Conteúdo do histórico será preenchido via JavaScript -->
+            </div>
+        </div>
+    </div>
+
     <script>
         // Estado da aplicação
         const state = {
@@ -418,7 +513,11 @@
             // Novos estados para rastreabilidade
             currentPage: 1,
             itemsPerPage: 10,
-            filteredRequests: []
+            filteredRequests: [],
+            currentDenyRequestId: null,
+            currentWaitRequestId: null,
+            lastRefresh: null,
+            isLoading: false
         };
 
         // Elementos da DOM
@@ -451,6 +550,8 @@
             // Novos elementos para rastreabilidade
             exportPdfBtn: document.getElementById('export-pdf-btn'),
             refreshDataBtn: document.getElementById('refresh-data-btn'),
+            refreshUserRequests: document.getElementById('refresh-user-requests'),
+            refreshAdminRequests: document.getElementById('refresh-admin-requests'),
             filterDataInicio: document.getElementById('filter-data-inicio'),
             filterDataFim: document.getElementById('filter-data-fim'),
             filterStatus: document.getElementById('filter-status'),
@@ -458,20 +559,31 @@
             rastreabilidadeTableBody: document.getElementById('rastreabilidade-table-body'),
             totalRequisicoes: document.getElementById('total-requisicoes'),
             requisicoesPendentes: document.getElementById('requisicoes-pendentes'),
+            requisicoesEspera: document.getElementById('requisicoes-espera'),
             requisicoesEntregues: document.getElementById('requisicoes-entregues'),
             requisicoesNegadas: document.getElementById('requisicoes-negadas'),
+            requisicoesAprovadas: document.getElementById('requisicoes-aprovadas'),
             currentCount: document.getElementById('current-count'),
             totalCount: document.getElementById('total-count'),
             pageInfo: document.getElementById('page-info'),
             prevPage: document.getElementById('prev-page'),
-            nextPage: document.getElementById('next-page')
+            nextPage: document.getElementById('next-page'),
+            // Novos modais
+            denyReasonModal: document.getElementById('deny-reason-modal'),
+            denyReasonInput: document.getElementById('deny-reason-input'),
+            cancelDeny: document.getElementById('cancel-deny'),
+            confirmDeny: document.getElementById('confirm-deny'),
+            waitReasonModal: document.getElementById('wait-reason-modal'),
+            waitReasonInput: document.getElementById('wait-reason-input'),
+            cancelWait: document.getElementById('cancel-wait'),
+            confirmWait: document.getElementById('confirm-wait'),
+            historyModal: document.getElementById('history-modal'),
+            historyContent: document.getElementById('history-content'),
+            closeHistory: document.getElementById('close-history'),
+            // Elementos de loading
+            loadingIndicator: document.getElementById('loading-indicator'),
+            noDataMessage: document.getElementById('no-data-message')
         };
-
-        console.log('Sistema inicializado. Elementos carregados:', {
-            rastreabilidadeTableBody: !!elements.rastreabilidadeTableBody,
-            filteredRequests: state.filteredRequests.length,
-            requests: state.requests.length
-        });
 
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
@@ -512,19 +624,28 @@
             elements.requisicaoForm.addEventListener('submit', handleNewRequest);
             elements.cancelAction.addEventListener('click', hideConfirmationModal);
             
+            // Botões de atualização
+            elements.refreshUserRequests.addEventListener('click', forceRefreshData);
+            elements.refreshAdminRequests.addEventListener('click', forceRefreshData);
+            elements.refreshDataBtn.addEventListener('click', forceRefreshData);
+            
             // Adicionar event listeners para os botões de filtro
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active', 'bg-primary'));
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active', 'bg-primary', 'bg-info'));
                     document.querySelectorAll('.filter-btn').forEach(b => {
-                        if (b.dataset.status !== 'todos' && b.dataset.status !== 'pendente') {
+                        if (b.dataset.status !== 'todos' && b.dataset.status !== 'pendente' && b.dataset.status !== 'espera') {
                             b.classList.remove('text-white');
                         }
                     });
                     
-                    this.classList.add('active', 'bg-primary');
-                    if (this.dataset.status !== 'pendente') {
-                        this.classList.add('text-white');
+                    this.classList.add('active');
+                    if (this.dataset.status === 'espera') {
+                        this.classList.add('bg-info', 'text-white');
+                    } else if (this.dataset.status !== 'pendente') {
+                        this.classList.add('bg-primary', 'text-white');
+                    } else {
+                        this.classList.add('bg-primary');
                     }
                     
                     state.currentFilter = this.dataset.status;
@@ -534,13 +655,19 @@
 
             // Novos event listeners para rastreabilidade
             elements.exportPdfBtn.addEventListener('click', exportToPDF);
-            elements.refreshDataBtn.addEventListener('click', applyFilters);
             elements.filterDataInicio.addEventListener('change', applyFilters);
             elements.filterDataFim.addEventListener('change', applyFilters);
             elements.filterStatus.addEventListener('change', applyFilters);
             elements.filterSetor.addEventListener('change', applyFilters);
             elements.prevPage.addEventListener('click', previousPage);
             elements.nextPage.addEventListener('click', nextPage);
+
+            // Event listeners para os novos modais
+            elements.cancelDeny.addEventListener('click', hideDenyReasonModal);
+            elements.confirmDeny.addEventListener('click', handleConfirmDeny);
+            elements.cancelWait.addEventListener('click', hideWaitReasonModal);
+            elements.confirmWait.addEventListener('click', handleConfirmWait);
+            elements.closeHistory.addEventListener('click', hideHistoryModal);
 
             // Configurar datas padrão (últimos 30 dias)
             const endDate = new Date();
@@ -550,6 +677,190 @@
             elements.filterDataInicio.value = startDate.toISOString().split('T')[0];
             elements.filterDataFim.value = endDate.toISOString().split('T')[0];
         });
+
+        // Função para forçar atualização dos dados
+        function forceRefreshData() {
+            console.log('Forçando atualização dos dados...');
+            state.isLoading = true;
+            state.lastRefresh = new Date();
+            
+            // Mostrar indicador de carregamento
+            if (!elements.rastreabilidadeScreen.classList.contains('hidden')) {
+                elements.loadingIndicator.classList.remove('hidden');
+                elements.rastreabilidadeTableBody.innerHTML = '';
+                elements.rastreabilidadeMobileCards.innerHTML = '';
+            }
+            
+            // Recarregar dados manualmente
+            loadDataManually().then(() => {
+                state.isLoading = false;
+                elements.loadingIndicator.classList.add('hidden');
+                
+                // Atualizar todas as interfaces
+                renderUserRequests();
+                if (state.isAdmin) {
+                    renderRequests();
+                    if (!elements.rastreabilidadeScreen.classList.contains('hidden')) {
+                        applyFilters();
+                    }
+                }
+                
+                // Mostrar mensagem de sucesso
+                showToast('Dados atualizados com sucesso!', 'success');
+            }).catch(error => {
+                state.isLoading = false;
+                elements.loadingIndicator.classList.add('hidden');
+                console.error('Erro ao atualizar dados:', error);
+                showToast('Erro ao atualizar dados', 'error');
+            });
+        }
+
+        // Função para carregar dados manualmente (sem cache)
+        async function loadDataManually() {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    console.log('Carregando dados manualmente...');
+                    
+                    const q = window.firebase.query(
+                        window.firebase.collection(window.firebase.db, "requisicoes"),
+                        window.firebase.orderBy("timestamp", "desc")
+                    );
+
+                    const querySnapshot = await window.firebase.getDocs(q);
+                    state.requests = [];
+                    
+                    querySnapshot.forEach((doc) => {
+                        const request = doc.data();
+                        request.id = doc.id;
+                        
+                        // Garantir que a data está formatada
+                        if (!request.data && request.timestamp) {
+                            const timestamp = request.timestamp.toDate ? request.timestamp.toDate() : new Date(request.timestamp);
+                            request.data = timestamp.toLocaleString('pt-BR');
+                        }
+                        
+                        // Garantir que o histórico existe
+                        if (!request.historico) {
+                            request.historico = [{
+                                acao: 'requisicao_aberta',
+                                usuario: request.email,
+                                nomeUsuario: request.requisitante,
+                                data: request.data,
+                                timestamp: request.timestamp,
+                                detalhes: 'Requisição criada'
+                            }];
+                        }
+                        
+                        state.requests.push(request);
+                    });
+                    
+                    console.log('Dados carregados manualmente:', state.requests.length, 'requisições');
+                    resolve();
+                } catch (error) {
+                    console.error('Erro ao carregar dados manualmente:', error);
+                    reject(error);
+                }
+            });
+        }
+
+        // Configurar listener em tempo real para as requisições
+        function setupRealtimeListener() {
+            if (state.unsubscribeRequests) {
+                state.unsubscribeRequests();
+            }
+
+            console.log('Configurando listener em tempo real...');
+            
+            const q = window.firebase.query(
+                window.firebase.collection(window.firebase.db, "requisicoes"),
+                window.firebase.orderBy("timestamp", "desc")
+            );
+
+            state.unsubscribeRequests = window.firebase.onSnapshot(q, 
+                // onNext
+                (querySnapshot) => {
+                    console.log('Listener: dados recebidos', querySnapshot.size, 'documentos');
+                    handleSnapshotUpdate(querySnapshot);
+                },
+                // onError
+                (error) => {
+                    console.error('Erro no listener em tempo real:', error);
+                    showToast('Erro na conexão em tempo real', 'error');
+                    
+                    // Tentar reconectar após 5 segundos
+                    setTimeout(() => {
+                        console.log('Tentando reconectar listener...');
+                        setupRealtimeListener();
+                    }, 5000);
+                }
+            );
+        }
+
+        // Função para processar atualizações do snapshot
+        function handleSnapshotUpdate(querySnapshot) {
+            const newRequests = [];
+            let hasChanges = false;
+
+            querySnapshot.forEach((doc) => {
+                const request = doc.data();
+                request.id = doc.id;
+                
+                // Garantir que a data está formatada
+                if (!request.data && request.timestamp) {
+                    const timestamp = request.timestamp.toDate ? request.timestamp.toDate() : new Date(request.timestamp);
+                    request.data = timestamp.toLocaleString('pt-BR');
+                }
+                
+                // Garantir que o histórico existe
+                if (!request.historico) {
+                    request.historico = [{
+                        acao: 'requisicao_aberta',
+                        usuario: request.email,
+                        nomeUsuario: request.requisitante,
+                        data: request.data,
+                        timestamp: request.timestamp,
+                        detalhes: 'Requisição criada'
+                    }];
+                }
+                
+                newRequests.push(request);
+            });
+
+            // Verificar se houve mudanças
+            if (state.requests.length !== newRequests.length) {
+                hasChanges = true;
+            } else {
+                // Verificar se o conteúdo mudou
+                for (let i = 0; i < newRequests.length; i++) {
+                    const newReq = newRequests[i];
+                    const oldReq = state.requests.find(r => r.id === newReq.id);
+                    
+                    if (!oldReq || JSON.stringify(oldReq) !== JSON.stringify(newReq)) {
+                        hasChanges = true;
+                        break;
+                    }
+                }
+            }
+
+            if (hasChanges) {
+                console.log('Mudanças detectadas, atualizando interface...');
+                state.requests = newRequests;
+                
+                // Atualizar todas as interfaces
+                renderUserRequests();
+                if (state.isAdmin) {
+                    renderRequests();
+                    if (!elements.rastreabilidadeScreen.classList.contains('hidden')) {
+                        applyFilters();
+                    }
+                }
+                
+                // Mostrar notificação de atualização se não foi uma ação do usuário
+                if (!state.isLoading) {
+                    showToast('Dados atualizados', 'info');
+                }
+            }
+        }
 
         // Funções de manipulação de eventos
         async function handleLogin(e) {
@@ -574,8 +885,6 @@
                     );
                     
                     console.log('Login bem-sucedido:', userCredential.user.email);
-                    
-                    // O onAuthStateChanged irá lidar com o redirecionamento automaticamente
                     
                 } catch (error) {
                     console.error('Erro no login:', error);
@@ -637,7 +946,15 @@
                 observacoes: elements.observacoesTextarea.value,
                 data: new Date().toLocaleString('pt-BR'),
                 timestamp: new Date(),
-                status: 'pendente'
+                status: 'pendente',
+                historico: [{
+                    acao: 'requisicao_aberta',
+                    usuario: state.currentUser.email,
+                    nomeUsuario: state.currentUser.displayName || state.currentUser.email.split('@')[0],
+                    data: new Date().toLocaleString('pt-BR'),
+                    timestamp: new Date(),
+                    detalhes: 'Requisição criada'
+                }]
             };
             
             try {
@@ -658,49 +975,6 @@
             }
         }
 
-        // Configurar listener em tempo real para as requisições
-        function setupRealtimeListener() {
-            if (state.unsubscribeRequests) {
-                state.unsubscribeRequests();
-            }
-
-            const q = window.firebase.query(
-                window.firebase.collection(window.firebase.db, "requisicoes"),
-                window.firebase.orderBy("timestamp", "desc")
-            );
-
-            state.unsubscribeRequests = window.firebase.onSnapshot(q, (querySnapshot) => {
-                state.requests = [];
-                querySnapshot.forEach((doc) => {
-                    const request = doc.data();
-                    request.id = doc.id;
-                    
-                    // Garantir que a data está formatada
-                    if (!request.data && request.timestamp) {
-                        const timestamp = request.timestamp.toDate ? request.timestamp.toDate() : new Date(request.timestamp);
-                        request.data = timestamp.toLocaleString('pt-BR');
-                    }
-                    
-                    state.requests.push(request);
-                });
-                
-                console.log('Requisições carregadas:', state.requests.length);
-                
-                // Atualizar todas as interfaces
-                renderUserRequests();
-                
-                if (state.isAdmin) {
-                    renderRequests();
-                    // Se estiver na tela de rastreabilidade, atualizar
-                    if (!elements.rastreabilidadeScreen.classList.contains('hidden')) {
-                        applyFilters();
-                    }
-                }
-            }, (error) => {
-                console.error('Erro no listener:', error);
-            });
-        }
-
         async function checkIfUserIsAdmin(user) {
             try {
                 console.log('Verificando se usuário é admin:', user.email);
@@ -718,7 +992,6 @@
                 
             } catch (error) {
                 console.error('Erro ao verificar admin:', error);
-                // Em caso de erro, retorna false (não é admin)
                 return false;
             }
         }
@@ -795,11 +1068,24 @@
                 return;
             }
             
-            elements.userRequests.innerHTML = userRequests.map(request => `
-                <div class="border border-gray-200 rounded-lg p-3 md:p-4">
+            elements.userRequests.innerHTML = userRequests.map(request => {
+                // Verificar se há notificações (motivo de negação ou espera)
+                const negacao = request.historico?.find(h => h.acao === 'requisicao_negada');
+                const espera = request.historico?.find(h => h.acao === 'requisicao_em_espera');
+                const temNotificacao = (negacao && !negacao.vista) || (espera && !espera.vista);
+                
+                return `
+                <div class="border border-gray-200 rounded-lg p-3 md:p-4 ${temNotificacao ? 'bg-yellow-50 border-yellow-200' : ''}">
                     <div class="flex justify-between items-start mb-2">
                         <h3 class="font-medium text-gray-800 text-sm md:text-base">${request.material}</h3>
-                        <span class="status-badge ${getStatusClass(request.status)} text-xs py-1 px-2 rounded-full">${getStatusText(request.status)}</span>
+                        <div class="flex items-center">
+                            ${temNotificacao ? `
+                            <span class="bg-yellow-500 text-white text-xs py-1 px-2 rounded-full mr-2 animate-pulse">
+                                <i class="fas fa-exclamation-circle mr-1"></i> Nova
+                            </span>
+                            ` : ''}
+                            <span class="status-badge ${getStatusClass(request.status)} text-xs py-1 px-2 rounded-full">${getStatusText(request.status)}</span>
+                        </div>
                     </div>
                     <div class="text-xs md:text-sm text-gray-600 mb-1">
                         <span class="font-medium">Setor:</span> ${request.setor}
@@ -810,11 +1096,61 @@
                     <div class="text-xs md:text-sm text-gray-600 mb-1">
                         <span class="font-medium">Data:</span> ${request.data}
                     </div>
+                    ${negacao ? `
+                    <div class="mt-2 p-2 bg-red-100 border border-red-200 rounded text-xs text-red-700">
+                        <div class="font-medium mb-1">Motivo da negação:</div>
+                        <div>${negacao.motivo || negacao.detalhes}</div>
+                        <div class="text-xs mt-1 text-red-600">Por: ${negacao.nomeUsuario || negacao.usuario} em ${negacao.data}</div>
+                    </div>
+                    ` : ''}
+                    ${espera ? `
+                    <div class="mt-2 p-2 bg-purple-100 border border-purple-200 rounded text-xs text-purple-700">
+                        <div class="font-medium mb-1">Motivo da espera:</div>
+                        <div>${espera.motivo || espera.detalhes}</div>
+                        <div class="text-xs mt-1 text-purple-600">Por: ${espera.nomeUsuario || espera.usuario} em ${espera.data}</div>
+                    </div>
+                    ` : ''}
                     ${request.observacoes ? `<div class="text-xs md:text-sm text-gray-600 mt-2">
                         <span class="font-medium">Observações:</span> ${request.observacoes}
                     </div>` : ''}
+                    ${temNotificacao ? `
+                    <div class="mt-2 text-right">
+                        <button class="text-xs text-primary hover:underline marcar-vista-btn" data-id="${request.id}">
+                            Marcar como lida
+                        </button>
+                    </div>
+                    ` : ''}
                 </div>
-            `).join('');
+            `}).join('');
+            
+            // Adicionar event listeners para marcar como lida
+            document.querySelectorAll('.marcar-vista-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    marcarNotificacaoComoVista(this.dataset.id);
+                });
+            });
+        }
+
+        async function marcarNotificacaoComoVista(requestId) {
+            try {
+                const request = state.requests.find(req => req.id === requestId);
+                if (!request) return;
+                
+                const historicoAtualizado = request.historico.map(item => {
+                    if (item.acao === 'requisicao_negada' || item.acao === 'requisicao_em_espera') {
+                        return { ...item, vista: true };
+                    }
+                    return item;
+                });
+                
+                const requestRef = window.firebase.doc(window.firebase.db, "requisicoes", requestId);
+                await window.firebase.updateDoc(requestRef, {
+                    historico: historicoAtualizado
+                });
+                
+            } catch (error) {
+                console.error('Erro ao marcar notificação como vista:', error);
+            }
         }
 
         function renderRequests() {
@@ -835,7 +1171,11 @@
                 return;
             }
             
-            elements.requestsContainer.innerHTML = filteredRequests.map(request => `
+            elements.requestsContainer.innerHTML = filteredRequests.map(request => {
+                const negacao = request.historico?.find(h => h.acao === 'requisicao_negada');
+                const espera = request.historico?.find(h => h.acao === 'requisicao_em_espera');
+                
+                return `
                 <div class="bg-white border border-gray-200 rounded-xl card-shadow overflow-hidden">
                     <div class="p-3 md:p-4 border-b border-gray-200">
                         <div class="flex justify-between items-start mb-2">
@@ -859,6 +1199,20 @@
                             <span class="font-medium text-sm md:text-base">${request.quantidade}</span>
                         </div>
                         
+                        ${negacao ? `
+                        <div class="mb-3 md:mb-4 p-2 bg-red-50 border border-red-200 rounded">
+                            <div class="text-xs text-red-700 font-medium mb-1">Motivo da negação:</div>
+                            <div class="text-xs text-red-600">${negacao.motivo || negacao.detalhes}</div>
+                        </div>
+                        ` : ''}
+                        
+                        ${espera ? `
+                        <div class="mb-3 md:mb-4 p-2 bg-purple-50 border border-purple-200 rounded">
+                            <div class="text-xs text-purple-700 font-medium mb-1">Motivo da espera:</div>
+                            <div class="text-xs text-purple-600">${espera.motivo || espera.detalhes}</div>
+                        </div>
+                        ` : ''}
+                        
                         ${request.observacoes ? `
                         <div class="mb-3 md:mb-4">
                             <span class="text-xs md:text-sm text-gray-600 block mb-1">Observações:</span>
@@ -867,9 +1221,12 @@
                         ` : ''}
                         
                         <div class="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 mt-3 md:mt-4">
-                            ${request.status === 'pendente' ? `
+                            ${request.status === 'pendente' || request.status === 'espera' ? `
                             <button class="flex-1 bg-success text-white py-2 px-3 rounded-lg text-xs md:text-sm hover:bg-green-700 transition duration-200 approve-btn" data-id="${request.id}">
                                 <i class="fas fa-check mr-1"></i> Aprovar
+                            </button>
+                            <button class="flex-1 bg-info text-white py-2 px-3 rounded-lg text-xs md:text-sm hover:bg-purple-700 transition duration-200 wait-btn" data-id="${request.id}">
+                                <i class="fas fa-pause mr-1"></i> Espera
                             </button>
                             <button class="flex-1 bg-danger text-white py-2 px-3 rounded-lg text-xs md:text-sm hover:bg-red-700 transition duration-200 deny-btn" data-id="${request.id}">
                                 <i class="fas fa-times mr-1"></i> Negar
@@ -890,32 +1247,40 @@
                                 <i class="fas fa-undo mr-1"></i> Reabrir
                             </button>
                             ` : ''}
+                            
+                            <button class="flex-1 bg-primary text-white py-2 px-3 rounded-lg text-xs md:text-sm hover:bg-secondary transition duration-200 history-btn" data-id="${request.id}">
+                                <i class="fas fa-history mr-1"></i> Histórico
+                            </button>
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
             
             // Adicionar event listeners aos botões
             document.querySelectorAll('.approve-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     showConfirmationModal('Deseja aprovar esta requisição?', () => {
-                        updateRequestStatus(this.dataset.id, 'aprovado');
+                        updateRequestStatus(this.dataset.id, 'aprovado', 'Requisição aprovada');
                     });
                 });
             });
             
             document.querySelectorAll('.deny-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    showConfirmationModal('Deseja negar esta requisição?', () => {
-                        updateRequestStatus(this.dataset.id, 'negado');
-                    });
+                    showDenyReasonModal(this.dataset.id);
+                });
+            });
+            
+            document.querySelectorAll('.wait-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    showWaitReasonModal(this.dataset.id);
                 });
             });
             
             document.querySelectorAll('.complete-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     showConfirmationModal('Confirmar entrega do material?', () => {
-                        updateRequestStatus(this.dataset.id, 'entregue');
+                        updateRequestStatus(this.dataset.id, 'entregue', 'Material entregue');
                     });
                 });
             });
@@ -923,26 +1288,99 @@
             document.querySelectorAll('.pendent-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     showConfirmationModal('Deseja reabrir esta requisição?', () => {
-                        updateRequestStatus(this.dataset.id, 'pendente');
+                        updateRequestStatus(this.dataset.id, 'pendente', 'Requisição reaberta');
                     });
+                });
+            });
+            
+            document.querySelectorAll('.history-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    showHistoryModal(this.dataset.id);
                 });
             });
         }
 
-        async function updateRequestStatus(id, status) {
+        async function updateRequestStatus(id, status, acao) {
             try {
+                const request = state.requests.find(req => req.id === id);
+                if (!request) return;
+                
+                const novoHistorico = [
+                    ...request.historico,
+                    {
+                        acao: `requisicao_${status === 'aprovado' ? 'aprovada' : status === 'negado' ? 'negada' : status === 'entregue' ? 'entregue' : status === 'espera' ? 'em_espera' : 'reaberta'}`,
+                        usuario: state.currentUser.email,
+                        nomeUsuario: state.currentUser.displayName || state.currentUser.email.split('@')[0],
+                        data: new Date().toLocaleString('pt-BR'),
+                        timestamp: new Date(),
+                        detalhes: acao
+                    }
+                ];
+                
                 const requestRef = window.firebase.doc(window.firebase.db, "requisicoes", id);
                 await window.firebase.updateDoc(requestRef, {
-                    status: status
+                    status: status,
+                    historico: novoHistorico
                 });
-                // O listener em tempo real irá atualizar automaticamente a interface
             } catch (error) {
                 console.error('Erro ao atualizar requisição:', error);
                 alert('Erro ao atualizar requisição. Tente novamente.');
             }
         }
 
-        // NOVAS FUNÇÕES PARA RASTREABILIDADE
+        // NOVAS FUNÇÕES PARA ESPERA
+
+        function showWaitReasonModal(requestId) {
+            state.currentWaitRequestId = requestId;
+            elements.waitReasonInput.value = '';
+            elements.waitReasonModal.classList.remove('hidden');
+        }
+
+        function hideWaitReasonModal() {
+            elements.waitReasonModal.classList.add('hidden');
+            state.currentWaitRequestId = null;
+        }
+
+        async function handleConfirmWait() {
+            const motivo = elements.waitReasonInput.value.trim();
+            if (!motivo) {
+                alert('Por favor, informe o motivo para colocar em espera.');
+                return;
+            }
+
+            try {
+                const request = state.requests.find(req => req.id === state.currentWaitRequestId);
+                if (!request) return;
+                
+                const novoHistorico = [
+                    ...request.historico,
+                    {
+                        acao: 'requisicao_em_espera',
+                        usuario: state.currentUser.email,
+                        nomeUsuario: state.currentUser.displayName || state.currentUser.email.split('@')[0],
+                        data: new Date().toLocaleString('pt-BR'),
+                        timestamp: new Date(),
+                        detalhes: 'Requisição colocada em espera',
+                        motivo: motivo,
+                        vista: false // Para notificação
+                    }
+                ];
+                
+                const requestRef = window.firebase.doc(window.firebase.db, "requisicoes", state.currentWaitRequestId);
+                await window.firebase.updateDoc(requestRef, {
+                    status: 'espera',
+                    historico: novoHistorico
+                });
+                
+                hideWaitReasonModal();
+            } catch (error) {
+                console.error('Erro ao colocar requisição em espera:', error);
+                alert('Erro ao colocar requisição em espera. Tente novamente.');
+            }
+        }
+
+        // Restante das funções (applyFilters, updateRastreabilidadeTable, updateStatistics, etc.)
+        // [Manter todas as outras funções existentes...]
 
         function applyFilters() {
             console.log('Aplicando filtros...', state.requests.length);
@@ -993,9 +1431,6 @@
 
             // Versão Desktop (Tabela)
             elements.rastreabilidadeTableBody.innerHTML = paginatedRequests.map(request => {
-                const requestDate = request.timestamp?.toDate ? request.timestamp.toDate() : new Date(request.timestamp || request.data);
-                const tempoDecorrido = calculateTimeElapsed(requestDate);
-                
                 return `
                     <tr class="table-row hover:bg-gray-50">
                         <td class="px-3 py-2 text-sm text-gray-900" title="${request.id}">${request.id.substring(0, 6)}...</td>
@@ -1007,7 +1442,11 @@
                         <td class="px-3 py-2 text-sm">
                             <span class="status-badge ${getStatusClass(request.status)} text-xs py-1 px-2 rounded-full">${getStatusText(request.status)}</span>
                         </td>
-                        <td class="px-3 py-2 text-sm text-gray-900">${tempoDecorrido}</td>
+                        <td class="px-3 py-2 text-sm">
+                            <button class="text-primary hover:text-secondary history-btn-table" data-id="${request.id}">
+                                <i class="fas fa-history mr-1"></i> Ver Histórico
+                            </button>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -1016,9 +1455,6 @@
             const mobileCardsContainer = document.getElementById('rastreabilidade-mobile-cards');
             if (mobileCardsContainer) {
                 mobileCardsContainer.innerHTML = paginatedRequests.map(request => {
-                    const requestDate = request.timestamp?.toDate ? request.timestamp.toDate() : new Date(request.timestamp || request.data);
-                    const tempoDecorrido = calculateTimeElapsed(requestDate);
-                    
                     return `
                         <div class="bg-white border border-gray-200 rounded-lg p-3 card-shadow">
                             <div class="flex justify-between items-start mb-2">
@@ -1035,10 +1471,6 @@
                                     <p class="font-medium">${request.quantidade}</p>
                                 </div>
                                 <div>
-                                    <span class="text-gray-600">Tempo:</span>
-                                    <p class="font-medium">${tempoDecorrido}</p>
-                                </div>
-                                <div class="col-span-2">
                                     <span class="text-gray-600">Data:</span>
                                     <p class="font-medium">${request.data}</p>
                                 </div>
@@ -1047,10 +1479,22 @@
                                     <p class="font-medium text-xs" title="${request.id}">${request.id.substring(0, 10)}...</p>
                                 </div>
                             </div>
+                            <div class="mt-2">
+                                <button class="w-full text-primary hover:text-secondary text-xs history-btn-table" data-id="${request.id}">
+                                    <i class="fas fa-history mr-1"></i> Ver Histórico Completo
+                                </button>
+                            </div>
                         </div>
                     `;
                 }).join('');
             }
+
+            // Adicionar event listeners aos botões de histórico na tabela
+            document.querySelectorAll('.history-btn-table').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    showHistoryModal(this.dataset.id);
+                });
+            });
 
             // Atualizar informações de paginação
             elements.currentCount.textContent = paginatedRequests.length;
@@ -1065,28 +1509,17 @@
         function updateStatistics() {
             const total = state.filteredRequests.length;
             const pendentes = state.filteredRequests.filter(req => req.status === 'pendente').length;
+            const espera = state.filteredRequests.filter(req => req.status === 'espera').length;
+            const aprovadas = state.filteredRequests.filter(req => req.status === 'aprovado').length;
             const entregues = state.filteredRequests.filter(req => req.status === 'entregue').length;
             const negadas = state.filteredRequests.filter(req => req.status === 'negado').length;
 
             elements.totalRequisicoes.textContent = total;
             elements.requisicoesPendentes.textContent = pendentes;
+            elements.requisicoesEspera.textContent = espera;
+            elements.requisicoesAprovadas.textContent = aprovadas;
             elements.requisicoesEntregues.textContent = entregues;
             elements.requisicoesNegadas.textContent = negadas;
-        }
-
-        function calculateTimeElapsed(startDate) {
-            const now = new Date();
-            const diffMs = now - startDate;
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-            const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            
-            if (diffDays > 0) {
-                return `${diffDays}d ${diffHours}h`;
-            } else if (diffHours > 0) {
-                return `${diffHours}h`;
-            } else {
-                return '<1h';
-            }
         }
 
         function previousPage() {
@@ -1135,16 +1568,137 @@
                 headStyles: { fillColor: [59, 130, 246] }
             });
 
+            // Adicionar histórico detalhado
+            let yPosition = doc.lastAutoTable.finalY + 10;
+            
+            state.filteredRequests.forEach((request, index) => {
+                if (yPosition > 270) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+                
+                doc.setFontSize(12);
+                doc.text(`Requisição: ${request.material} (ID: ${request.id.substring(0, 8)}...)`, 14, yPosition);
+                yPosition += 6;
+                
+                doc.setFontSize(8);
+                if (request.historico && request.historico.length > 0) {
+                    request.historico.forEach(historico => {
+                        if (yPosition > 270) {
+                            doc.addPage();
+                            yPosition = 20;
+                        }
+                        
+                        let texto = `${historico.data} - ${getAcaoTexto(historico.acao)} por ${historico.nomeUsuario || historico.usuario}`;
+                        if (historico.motivo) {
+                            texto += ` - Motivo: ${historico.motivo}`;
+                        }
+                        
+                        doc.text(texto, 20, yPosition);
+                        yPosition += 4;
+                    });
+                }
+                
+                yPosition += 6;
+            });
+
             // Estatísticas no final
-            const finalY = doc.lastAutoTable.finalY + 10;
+            if (yPosition > 250) {
+                doc.addPage();
+                yPosition = 20;
+            }
+            
             doc.setFontSize(10);
-            doc.text(`Total de Requisições: ${state.filteredRequests.length}`, 14, finalY);
-            doc.text(`Pendentes: ${state.filteredRequests.filter(req => req.status === 'pendente').length}`, 14, finalY + 6);
-            doc.text(`Entregues: ${state.filteredRequests.filter(req => req.status === 'entregue').length}`, 14, finalY + 12);
-            doc.text(`Negadas: ${state.filteredRequests.filter(req => req.status === 'negado').length}`, 14, finalY + 18);
+            doc.text(`Total de Requisições: ${state.filteredRequests.length}`, 14, yPosition);
+            doc.text(`Pendentes: ${state.filteredRequests.filter(req => req.status === 'pendente').length}`, 14, yPosition + 6);
+            doc.text(`Em Espera: ${state.filteredRequests.filter(req => req.status === 'espera').length}`, 14, yPosition + 12);
+            doc.text(`Aprovadas: ${state.filteredRequests.filter(req => req.status === 'aprovado').length}`, 14, yPosition + 18);
+            doc.text(`Entregues: ${state.filteredRequests.filter(req => req.status === 'entregue').length}`, 14, yPosition + 24);
+            doc.text(`Negadas: ${state.filteredRequests.filter(req => req.status === 'negado').length}`, 14, yPosition + 30);
 
             // Salvar PDF
             doc.save(`rastreabilidade-requisicoes-${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+
+        function getAcaoTexto(acao) {
+            const acoes = {
+                'requisicao_aberta': 'Requisição aberta',
+                'requisicao_aprovada': 'Requisição aprovada',
+                'requisicao_negada': 'Requisição negada',
+                'requisicao_em_espera': 'Requisição em espera',
+                'requisicao_entregue': 'Material entregue',
+                'requisicao_reaberta': 'Requisição reaberta'
+            };
+            return acoes[acao] || acao;
+        }
+
+        function showHistoryModal(requestId) {
+            const request = state.requests.find(req => req.id === requestId);
+            if (!request) return;
+            
+            elements.historyContent.innerHTML = `
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <h4 class="font-bold text-gray-800 mb-2">Detalhes da Requisição</h4>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div><span class="font-medium">Material:</span> ${request.material}</div>
+                        <div><span class="font-medium">Requisitante:</span> ${request.requisitante}</div>
+                        <div><span class="font-medium">Setor:</span> ${request.setor}</div>
+                        <div><span class="font-medium">Quantidade:</span> ${request.quantidade}</div>
+                        <div><span class="font-medium">Status:</span> <span class="status-badge ${getStatusClass(request.status)} text-xs py-1 px-2 rounded-full">${getStatusText(request.status)}</span></div>
+                        <div><span class="font-medium">Data de abertura:</span> ${request.data}</div>
+                    </div>
+                    ${request.observacoes ? `
+                    <div class="mt-2">
+                        <span class="font-medium">Observações:</span>
+                        <p class="text-sm mt-1">${request.observacoes}</p>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <h4 class="font-bold text-gray-800 mb-3">Histórico de Ações</h4>
+                <div class="space-y-3">
+                    ${request.historico && request.historico.length > 0 
+                        ? request.historico.map(historico => `
+                            <div class="border-l-4 ${getHistoryBorderColor(historico.acao)} pl-4 py-2">
+                                <div class="flex justify-between items-start">
+                                    <div class="font-medium text-gray-800">${getAcaoTexto(historico.acao)}</div>
+                                    <div class="text-xs text-gray-500">${historico.data}</div>
+                                </div>
+                                <div class="text-sm text-gray-600 mt-1">
+                                    Por: ${historico.nomeUsuario || historico.usuario}
+                                    ${historico.motivo ? `<div class="mt-1 ${getHistoryTextColor(historico.acao)}"><strong>Motivo:</strong> ${historico.motivo}</div>` : ''}
+                                    ${historico.detalhes && !historico.motivo ? `<div class="mt-1">${historico.detalhes}</div>` : ''}
+                                </div>
+                            </div>
+                        `).join('')
+                        : '<p class="text-gray-500 text-center py-4">Nenhum histórico disponível</p>'
+                    }
+                </div>
+            `;
+            
+            elements.historyModal.classList.remove('hidden');
+        }
+
+        function getHistoryBorderColor(acao) {
+            switch(acao) {
+                case 'requisicao_negada': return 'border-red-500';
+                case 'requisicao_em_espera': return 'border-purple-500';
+                case 'requisicao_aprovada': return 'border-green-500';
+                case 'requisicao_entregue': return 'border-blue-500';
+                default: return 'border-gray-500';
+            }
+        }
+
+        function getHistoryTextColor(acao) {
+            switch(acao) {
+                case 'requisicao_negada': return 'text-red-600';
+                case 'requisicao_em_espera': return 'text-purple-600';
+                default: return 'text-gray-600';
+            }
+        }
+
+        function hideHistoryModal() {
+            elements.historyModal.classList.add('hidden');
         }
 
         function showConfirmationModal(message, confirmCallback) {
@@ -1166,10 +1720,104 @@
             elements.confirmationModal.classList.add('hidden');
         }
 
+        function showDenyReasonModal(requestId) {
+            state.currentDenyRequestId = requestId;
+            elements.denyReasonInput.value = '';
+            elements.denyReasonModal.classList.remove('hidden');
+        }
+
+        function hideDenyReasonModal() {
+            elements.denyReasonModal.classList.add('hidden');
+            state.currentDenyRequestId = null;
+        }
+
+        async function handleConfirmDeny() {
+            const motivo = elements.denyReasonInput.value.trim();
+            if (!motivo) {
+                alert('Por favor, informe o motivo da negação.');
+                return;
+            }
+
+            try {
+                const request = state.requests.find(req => req.id === state.currentDenyRequestId);
+                if (!request) return;
+                
+                const novoHistorico = [
+                    ...request.historico,
+                    {
+                        acao: 'requisicao_negada',
+                        usuario: state.currentUser.email,
+                        nomeUsuario: state.currentUser.displayName || state.currentUser.email.split('@')[0],
+                        data: new Date().toLocaleString('pt-BR'),
+                        timestamp: new Date(),
+                        detalhes: 'Requisição negada',
+                        motivo: motivo,
+                        vista: false
+                    }
+                ];
+                
+                const requestRef = window.firebase.doc(window.firebase.db, "requisicoes", state.currentDenyRequestId);
+                await window.firebase.updateDoc(requestRef, {
+                    status: 'negado',
+                    historico: novoHistorico
+                });
+                
+                hideDenyReasonModal();
+            } catch (error) {
+                console.error('Erro ao negar requisição:', error);
+                alert('Erro ao negar requisição. Tente novamente.');
+            }
+        }
+
+        // Função de toast para feedback
+        function showToast(message, type = 'info') {
+            const existingToast = document.getElementById('global-toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+
+            const toast = document.createElement('div');
+            toast.id = 'global-toast';
+            toast.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white max-w-sm transform transition-transform duration-300 ${
+                type === 'success' ? 'bg-success' : 
+                type === 'error' ? 'bg-danger' : 
+                type === 'warning' ? 'bg-warning' :
+                'bg-primary'
+            }`;
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${
+                        type === 'success' ? 'fa-check-circle' : 
+                        type === 'error' ? 'fa-exclamation-circle' : 
+                        type === 'warning' ? 'fa-exclamation-triangle' :
+                        'fa-info-circle'
+                    } mr-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('translate-x-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-x-0');
+                toast.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
         // Funções auxiliares
         function getStatusClass(status) {
             switch(status) {
                 case 'pendente': return 'bg-warning text-white';
+                case 'espera': return 'bg-info text-white';
                 case 'aprovado': return 'bg-primary text-white';
                 case 'entregue': return 'bg-success text-white';
                 case 'negado': return 'bg-danger text-white';
@@ -1180,6 +1828,7 @@
         function getStatusText(status) {
             switch(status) {
                 case 'pendente': return 'Pendente';
+                case 'espera': return 'Em Espera';
                 case 'aprovado': return 'Aprovado';
                 case 'entregue': return 'Entregue';
                 case 'negado': return 'Negado';
