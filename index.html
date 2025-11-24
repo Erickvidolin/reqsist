@@ -580,9 +580,10 @@
             historyModal: document.getElementById('history-modal'),
             historyContent: document.getElementById('history-content'),
             closeHistory: document.getElementById('close-history'),
-            // Elementos de loading
+            // Elementos de loading - CORRIGIDOS
             loadingIndicator: document.getElementById('loading-indicator'),
-            noDataMessage: document.getElementById('no-data-message')
+            noDataMessage: document.getElementById('no-data-message'),
+            rastreabilidadeMobileCards: document.getElementById('rastreabilidade-mobile-cards')
         };
 
         // Inicialização
@@ -678,23 +679,29 @@
             elements.filterDataFim.value = endDate.toISOString().split('T')[0];
         });
 
-        // Função para forçar atualização dos dados
+        // Função para forçar atualização dos dados - CORRIGIDA
         function forceRefreshData() {
             console.log('Forçando atualização dos dados...');
             state.isLoading = true;
             state.lastRefresh = new Date();
             
-            // Mostrar indicador de carregamento
+            // Mostrar indicador de carregamento apenas se estiver na tela de rastreabilidade
             if (!elements.rastreabilidadeScreen.classList.contains('hidden')) {
                 elements.loadingIndicator.classList.remove('hidden');
-                elements.rastreabilidadeTableBody.innerHTML = '';
-                elements.rastreabilidadeMobileCards.innerHTML = '';
+                if (elements.rastreabilidadeTableBody) {
+                    elements.rastreabilidadeTableBody.innerHTML = '';
+                }
+                if (elements.rastreabilidadeMobileCards) {
+                    elements.rastreabilidadeMobileCards.innerHTML = '';
+                }
             }
             
             // Recarregar dados manualmente
             loadDataManually().then(() => {
                 state.isLoading = false;
-                elements.loadingIndicator.classList.add('hidden');
+                if (elements.loadingIndicator) {
+                    elements.loadingIndicator.classList.add('hidden');
+                }
                 
                 // Atualizar todas as interfaces
                 renderUserRequests();
@@ -709,13 +716,15 @@
                 showToast('Dados atualizados com sucesso!', 'success');
             }).catch(error => {
                 state.isLoading = false;
-                elements.loadingIndicator.classList.add('hidden');
+                if (elements.loadingIndicator) {
+                    elements.loadingIndicator.classList.add('hidden');
+                }
                 console.error('Erro ao atualizar dados:', error);
                 showToast('Erro ao atualizar dados', 'error');
             });
         }
 
-        // Função para carregar dados manualmente (sem cache)
+        // Função para carregar dados manualmente (sem cache) - CORRIGIDA
         async function loadDataManually() {
             return new Promise(async (resolve, reject) => {
                 try {
@@ -727,7 +736,7 @@
                     );
 
                     const querySnapshot = await window.firebase.getDocs(q);
-                    state.requests = [];
+                    const newRequests = [];
                     
                     querySnapshot.forEach((doc) => {
                         const request = doc.data();
@@ -737,6 +746,8 @@
                         if (!request.data && request.timestamp) {
                             const timestamp = request.timestamp.toDate ? request.timestamp.toDate() : new Date(request.timestamp);
                             request.data = timestamp.toLocaleString('pt-BR');
+                        } else if (!request.data) {
+                            request.data = new Date().toLocaleString('pt-BR');
                         }
                         
                         // Garantir que o histórico existe
@@ -746,14 +757,15 @@
                                 usuario: request.email,
                                 nomeUsuario: request.requisitante,
                                 data: request.data,
-                                timestamp: request.timestamp,
+                                timestamp: request.timestamp || new Date(),
                                 detalhes: 'Requisição criada'
                             }];
                         }
                         
-                        state.requests.push(request);
+                        newRequests.push(request);
                     });
                     
+                    state.requests = newRequests;
                     console.log('Dados carregados manualmente:', state.requests.length, 'requisições');
                     resolve();
                 } catch (error) {
@@ -763,7 +775,7 @@
             });
         }
 
-        // Configurar listener em tempo real para as requisições
+        // Configurar listener em tempo real para as requisições - CORRIGIDA
         function setupRealtimeListener() {
             if (state.unsubscribeRequests) {
                 state.unsubscribeRequests();
@@ -771,32 +783,38 @@
 
             console.log('Configurando listener em tempo real...');
             
-            const q = window.firebase.query(
-                window.firebase.collection(window.firebase.db, "requisicoes"),
-                window.firebase.orderBy("timestamp", "desc")
-            );
+            try {
+                const q = window.firebase.query(
+                    window.firebase.collection(window.firebase.db, "requisicoes"),
+                    window.firebase.orderBy("timestamp", "desc")
+                );
 
-            state.unsubscribeRequests = window.firebase.onSnapshot(q, 
-                // onNext
-                (querySnapshot) => {
-                    console.log('Listener: dados recebidos', querySnapshot.size, 'documentos');
-                    handleSnapshotUpdate(querySnapshot);
-                },
-                // onError
-                (error) => {
-                    console.error('Erro no listener em tempo real:', error);
-                    showToast('Erro na conexão em tempo real', 'error');
-                    
-                    // Tentar reconectar após 5 segundos
-                    setTimeout(() => {
-                        console.log('Tentando reconectar listener...');
-                        setupRealtimeListener();
-                    }, 5000);
-                }
-            );
+                state.unsubscribeRequests = window.firebase.onSnapshot(q, 
+                    // onNext
+                    (querySnapshot) => {
+                        console.log('Listener: dados recebidos', querySnapshot.size, 'documentos');
+                        handleSnapshotUpdate(querySnapshot);
+                    },
+                    // onError
+                    (error) => {
+                        console.error('Erro no listener em tempo real:', error);
+                        showToast('Erro na conexão em tempo real', 'error');
+                        
+                        // Tentar reconectar após 5 segundos
+                        setTimeout(() => {
+                            console.log('Tentando reconectar listener...');
+                            setupRealtimeListener();
+                        }, 5000);
+                    }
+                );
+            } catch (error) {
+                console.error('Erro ao configurar listener:', error);
+                // Tentar novamente depois de um tempo
+                setTimeout(() => setupRealtimeListener(), 3000);
+            }
         }
 
-        // Função para processar atualizações do snapshot
+        // Função para processar atualizações do snapshot - CORRIGIDA
         function handleSnapshotUpdate(querySnapshot) {
             const newRequests = [];
             let hasChanges = false;
@@ -809,6 +827,8 @@
                 if (!request.data && request.timestamp) {
                     const timestamp = request.timestamp.toDate ? request.timestamp.toDate() : new Date(request.timestamp);
                     request.data = timestamp.toLocaleString('pt-BR');
+                } else if (!request.data) {
+                    request.data = new Date().toLocaleString('pt-BR');
                 }
                 
                 // Garantir que o histórico existe
@@ -818,7 +838,7 @@
                         usuario: request.email,
                         nomeUsuario: request.requisitante,
                         data: request.data,
-                        timestamp: request.timestamp,
+                        timestamp: request.timestamp || new Date(),
                         detalhes: 'Requisição criada'
                     }];
                 }
@@ -842,7 +862,7 @@
                 }
             }
 
-            if (hasChanges) {
+            if (hasChanges || state.requests.length === 0) {
                 console.log('Mudanças detectadas, atualizando interface...');
                 state.requests = newRequests;
                 
@@ -969,6 +989,12 @@
                 
                 // Mostrar mensagem de sucesso
                 alert('Requisição enviada com sucesso!');
+                
+                // Forçar atualização imediata
+                setTimeout(() => {
+                    forceRefreshData();
+                }, 1000);
+                
             } catch (error) {
                 console.error('Erro ao enviar requisição:', error);
                 alert('Erro ao enviar requisição. Tente novamente.');
@@ -1069,10 +1095,18 @@
             }
             
             elements.userRequests.innerHTML = userRequests.map(request => {
-                // Verificar se há notificações (motivo de negação ou espera)
+                // Verificar se há notificações (motivo de negação ou espera) - CORRIGIDO
+                // A mensagem só aparece se a requisição NÃO estiver aprovada/entregue e a notificação não foi vista
                 const negacao = request.historico?.find(h => h.acao === 'requisicao_negada');
                 const espera = request.historico?.find(h => h.acao === 'requisicao_em_espera');
-                const temNotificacao = (negacao && !negacao.vista) || (espera && !espera.vista);
+                
+                // Mensagem só aparece se:
+                // 1. A requisição NÃO está aprovada ou entregue
+                // 2. E existe uma notificação (negação ou espera)
+                // 3. E a notificação não foi marcada como vista
+                const mostrarNegacao = negacao && !negacao.vista && request.status !== 'aprovado' && request.status !== 'entregue';
+                const mostrarEspera = espera && !espera.vista && request.status !== 'aprovado' && request.status !== 'entregue';
+                const temNotificacao = mostrarNegacao || mostrarEspera;
                 
                 return `
                 <div class="border border-gray-200 rounded-lg p-3 md:p-4 ${temNotificacao ? 'bg-yellow-50 border-yellow-200' : ''}">
@@ -1096,14 +1130,14 @@
                     <div class="text-xs md:text-sm text-gray-600 mb-1">
                         <span class="font-medium">Data:</span> ${request.data}
                     </div>
-                    ${negacao ? `
+                    ${mostrarNegacao ? `
                     <div class="mt-2 p-2 bg-red-100 border border-red-200 rounded text-xs text-red-700">
                         <div class="font-medium mb-1">Motivo da negação:</div>
                         <div>${negacao.motivo || negacao.detalhes}</div>
                         <div class="text-xs mt-1 text-red-600">Por: ${negacao.nomeUsuario || negacao.usuario} em ${negacao.data}</div>
                     </div>
                     ` : ''}
-                    ${espera ? `
+                    ${mostrarEspera ? `
                     <div class="mt-2 p-2 bg-purple-100 border border-purple-200 rounded text-xs text-purple-700">
                         <div class="font-medium mb-1">Motivo da espera:</div>
                         <div>${espera.motivo || espera.detalhes}</div>
@@ -1147,6 +1181,11 @@
                 await window.firebase.updateDoc(requestRef, {
                     historico: historicoAtualizado
                 });
+                
+                // Forçar atualização imediata
+                setTimeout(() => {
+                    forceRefreshData();
+                }, 500);
                 
             } catch (error) {
                 console.error('Erro ao marcar notificação como vista:', error);
@@ -1300,28 +1339,44 @@
             });
         }
 
+        // Função updateRequestStatus - CORRIGIDA
         async function updateRequestStatus(id, status, acao) {
             try {
                 const request = state.requests.find(req => req.id === id);
                 if (!request) return;
                 
-                const novoHistorico = [
-                    ...request.historico,
-                    {
-                        acao: `requisicao_${status === 'aprovado' ? 'aprovada' : status === 'negado' ? 'negada' : status === 'entregue' ? 'entregue' : status === 'espera' ? 'em_espera' : 'reaberta'}`,
-                        usuario: state.currentUser.email,
-                        nomeUsuario: state.currentUser.displayName || state.currentUser.email.split('@')[0],
-                        data: new Date().toLocaleString('pt-BR'),
-                        timestamp: new Date(),
-                        detalhes: acao
-                    }
-                ];
+                // Quando uma requisição é aprovada, marcar automaticamente as notificações como vistas
+                let historicoAtualizado = [...request.historico];
+                
+                if (status === 'aprovado' || status === 'entregue') {
+                    historicoAtualizado = historicoAtualizado.map(item => {
+                        if (item.acao === 'requisicao_negada' || item.acao === 'requisicao_em_espera') {
+                            return { ...item, vista: true };
+                        }
+                        return item;
+                    });
+                }
+                
+                historicoAtualizado.push({
+                    acao: `requisicao_${status === 'aprovado' ? 'aprovada' : status === 'negado' ? 'negada' : status === 'entregue' ? 'entregue' : status === 'espera' ? 'em_espera' : 'reaberta'}`,
+                    usuario: state.currentUser.email,
+                    nomeUsuario: state.currentUser.displayName || state.currentUser.email.split('@')[0],
+                    data: new Date().toLocaleString('pt-BR'),
+                    timestamp: new Date(),
+                    detalhes: acao
+                });
                 
                 const requestRef = window.firebase.doc(window.firebase.db, "requisicoes", id);
                 await window.firebase.updateDoc(requestRef, {
                     status: status,
-                    historico: novoHistorico
+                    historico: historicoAtualizado
                 });
+
+                // Forçar atualização imediata dos dados
+                setTimeout(() => {
+                    forceRefreshData();
+                }, 500);
+                
             } catch (error) {
                 console.error('Erro ao atualizar requisição:', error);
                 alert('Erro ao atualizar requisição. Tente novamente.');
@@ -1373,15 +1428,19 @@
                 });
                 
                 hideWaitReasonModal();
+                
+                // Forçar atualização imediata
+                setTimeout(() => {
+                    forceRefreshData();
+                }, 500);
+                
             } catch (error) {
                 console.error('Erro ao colocar requisição em espera:', error);
                 alert('Erro ao colocar requisição em espera. Tente novamente.');
             }
         }
 
-        // Restante das funções (applyFilters, updateRastreabilidadeTable, updateStatistics, etc.)
-        // [Manter todas as outras funções existentes...]
-
+        // Função applyFilters - CORRIGIDA
         function applyFilters() {
             console.log('Aplicando filtros...', state.requests.length);
             
@@ -1392,7 +1451,8 @@
                 const startDate = new Date(elements.filterDataInicio.value);
                 startDate.setHours(0, 0, 0, 0);
                 filtered = filtered.filter(req => {
-                    const reqDate = req.timestamp?.toDate ? req.timestamp.toDate() : new Date(req.timestamp || req.data);
+                    if (!req.timestamp) return false;
+                    const reqDate = req.timestamp.toDate ? req.timestamp.toDate() : new Date(req.timestamp);
                     reqDate.setHours(0, 0, 0, 0);
                     return reqDate >= startDate;
                 });
@@ -1402,7 +1462,8 @@
                 const endDate = new Date(elements.filterDataFim.value);
                 endDate.setHours(23, 59, 59, 999);
                 filtered = filtered.filter(req => {
-                    const reqDate = req.timestamp?.toDate ? req.timestamp.toDate() : new Date(req.timestamp || req.data);
+                    if (!req.timestamp) return false;
+                    const reqDate = req.timestamp.toDate ? req.timestamp.toDate() : new Date(req.timestamp);
                     return reqDate <= endDate;
                 });
             }
@@ -1452,9 +1513,8 @@
             }).join('');
 
             // Versão Mobile (Cards)
-            const mobileCardsContainer = document.getElementById('rastreabilidade-mobile-cards');
-            if (mobileCardsContainer) {
-                mobileCardsContainer.innerHTML = paginatedRequests.map(request => {
+            if (elements.rastreabilidadeMobileCards) {
+                elements.rastreabilidadeMobileCards.innerHTML = paginatedRequests.map(request => {
                     return `
                         <div class="bg-white border border-gray-200 rounded-lg p-3 card-shadow">
                             <div class="flex justify-between items-start mb-2">
@@ -1504,6 +1564,15 @@
             // Atualizar botões de paginação
             elements.prevPage.disabled = state.currentPage === 1;
             elements.nextPage.disabled = endIndex >= state.filteredRequests.length;
+
+            // Mostrar/ocultar mensagem de nenhum dado
+            if (elements.noDataMessage) {
+                if (state.filteredRequests.length === 0) {
+                    elements.noDataMessage.classList.remove('hidden');
+                } else {
+                    elements.noDataMessage.classList.add('hidden');
+                }
+            }
         }
 
         function updateStatistics() {
@@ -1763,6 +1832,12 @@
                 });
                 
                 hideDenyReasonModal();
+                
+                // Forçar atualização imediata
+                setTimeout(() => {
+                    forceRefreshData();
+                }, 500);
+                
             } catch (error) {
                 console.error('Erro ao negar requisição:', error);
                 alert('Erro ao negar requisição. Tente novamente.');
